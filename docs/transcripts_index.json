@@ -1,7 +1,7 @@
 {
-  "updated": "2026-05-22 12:25:04",
-  "room_count": 5,
-  "transcript_count": 10,
+  "updated": "2026-05-22 16:28:51",
+  "room_count": 4,
+  "transcript_count": 9,
   "anchors": [
     {
       "id": "961019695933",
@@ -78,18 +78,6 @@
           "start": "20260521",
           "end": "225917_20260522_000102",
           "url": "https://raw.githubusercontent.com/tangwei880620-rgb/douyin-recorder/main/673814862790_20260521_225917_20260522_000102.wav/673814862790_20260521_225917_20260522_000102.txt"
-        }
-      ]
-    },
-    {
-      "id": "31463759296",
-      "name": "小曼在泰国",
-      "transcripts": [
-        {
-          "name": "31463759296_20260522_094834_20260522_102331.txt",
-          "start": "20260522",
-          "end": "094834_20260522_102331",
-          "url": "https://raw.githubusercontent.com/tangwei880620-rgb/douyin-recorder/main/31463759296_20260522_094834_20260522_102331.wav/31463759296_20260522_094834_20260522_102331.txt"
         }
       ]
     }
