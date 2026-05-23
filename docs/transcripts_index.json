@@ -1,7 +1,7 @@
 {
-  "updated": "2026-05-23 20:58:39",
+  "updated": "2026-05-23 22:56:45",
   "room_count": 3,
-  "transcript_count": 10,
+  "transcript_count": 9,
   "anchors": [
     {
       "id": "961019695933",
@@ -24,12 +24,6 @@
           "start": "20260522",
           "end": "003236_20260522_012606",
           "url": "https://raw.githubusercontent.com/tangwei880620-rgb/douyin-recorder/main/961019695933_20260522_003236_20260522_012606.wav/961019695933_20260522_003236_20260522_012606.txt"
-        },
-        {
-          "name": "961019695933_20260521_233549_20260522_000911.txt",
-          "start": "20260521",
-          "end": "233549_20260522_000911",
-          "url": "https://raw.githubusercontent.com/tangwei880620-rgb/douyin-recorder/main/961019695933_20260521_233549_20260522_000911.wav/961019695933_20260521_233549_20260522_000911.txt"
         }
       ]
     },
