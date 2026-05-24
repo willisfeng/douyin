@@ -1,7 +1,9 @@
 name: 抖音直播24小时监控
 
 on:
-  workflow_dispatch:
+  #workflow_dispatch:
+  schedule:
+    - cron: "0 17 * * *"
 
 env:
   PYTHON_VERSION: '3.11'
