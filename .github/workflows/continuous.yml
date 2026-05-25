@@ -1,0 +1,106 @@
+name: 抖音直播24小时监控
+
+on:
+  #workflow_dispatch:
+  schedule:
+    - cron: "0 */5 * * *"
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/ms-playwright
+            /home/runner/.cache/ms-playwright
+            ~/.cache/torch
+            ~/.cache/modelscope
+            ~/.cache/huggingface
+          key: deps-v4-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            deps-v4-${{ runner.os }}-
+            deps-v4-
+            deps-
+            de
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install --timeout 120 torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --timeout 120 torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install --timeout 120 funasr
+          pip install --timeout 120 requests
+          pip install --timeout 120 playwright
+          mkdir -p /tmp/recordings /tmp/transcripts
+      - name: Install Playwright browsers
+        run: |
+          python -m playwright install chromium --with-deps
+          echo "Browser installed to: $(python -c 'import playwright;print(playwright.__file__)')"
+      - name: Show TH time
+        run: |
+          echo 'GitHub UTC: ' $(date -u '+%Y-%m-%d %H:%M:%S')
+          echo 'Thailand:  ' $(TZ='Asia/Bangkok' date '+%Y-%m-%d %H:%M:%S')
+      - name: Set locale
+        run: |
+          sudo locale-gen en_US.UTF-8 || true
+          sudo update-locale LANG=en_US.UTF-8 || true
+          echo LANG=en_US.UTF-8 >> "${GITHUB_ENV}"
+          echo LC_ALL=en_US.UTF-8 >> "${GITHUB_ENV}"
+      - name: Debug curl
+        run: |
+          curl -s -L --max-time 25 -H 'User-Agent: Mozilla/5.0' -H 'Accept: text/html' 'https://live.douyin.com/673814862790' -o /tmp/curl_debug.html
+          echo 'Curl exit:' $?
+          head -c 300 /tmp/curl_debug.html
+          echo ''
+          wc -c /tmp/curl_debug.html
+      - name: Run recorder
+        run: python recorder.py
+        env:
+          CHECK_INTERVAL: 60
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_RUN_NUMBER: ${{ github.run_number }}
+          DOUYIN_COOKIE: ${{ secrets.DOUYIN_COOKIE }}
+          TEST_MODE: ${{ github.event.inputs.test_mode || '' }}
+          TEST_ROOM: ${{ github.event.inputs.test_room || '344763580' }}
+          TEST_DURATION: ${{ github.event.inputs.test_duration || '60' }}
+      - name: Fallback upload to Release (dedup)
+        if: always()
+        run: python3 fallback_upload.py
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_RUN_ID: ${{ github.run_id }}
+      - name: Self-renew (trigger next run, dedup)
+        if: always()
+        run: |
+          EXISTING=$(curl -s -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/continuous.yml/runs?per_page=5&status=in_progress")
+          IN_PROGRESS=$(echo "${EXISTING}" | python3 -c "import sys,json; runs=json.load(sys.stdin).get(\"workflow_runs\",[]); current=\"${{ github.run_number }}\"; other=[r[\"run_number\"] for r in runs if str(r[\"run_number\"])!=current]; print(len(other))" 2>/dev/null || echo "0")
+          if [ "${IN_PROGRESS}" -gt "0" ]; then
+            echo "Skipped: ${IN_PROGRESS} other in-progress run(s) exist"
+          else
+            curl -s -X POST "https://api.github.com/repos/${{ github.repository }}/actions/workflows/continuous.yml/dispatches" \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+              -H "User-Agent: renew" \
+              --data '{"ref":"main"}' && echo "Renew OK" || echo "Renew FAIL"
+          fi

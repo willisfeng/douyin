@@ -1,0 +1,40 @@
+name: Add Room
+
+on:
+  workflow_dispatch:
+    inputs:
+      room_id:
+        description: Room ID to add
+        required: true
+      room_name:
+        description: Room display name (optional)
+        required: false
+
+jobs:
+  add_room:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add room
+        shell: bash
+        env:
+          RID: ${{ github.event.inputs.room_id }}
+          RNAME: ${{ github.event.inputs.room_name }}
+        run: |
+          if [ -z "$RNAME" ]; then RNAME="$RID"; fi
+          if grep -q "^$RID = " rooms.txt; then
+            sed -i "s|^$RID = .*|$RID = $RNAME|" rooms.txt
+            echo "Updated: $RID = $RNAME"
+          else
+            echo "$RID = $RNAME" >> rooms.txt
+            echo "Added: $RID = $RNAME"
+          fi
+      - name: Commit
+        run: |
+          git config user.name "room-bot"
+          git config user.email "room-bot@github.com"
+          git add rooms.txt
+          git diff --cached --quiet || git commit -m "add room ${{ github.event.inputs.room_id }}"
+          git push

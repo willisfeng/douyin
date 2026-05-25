@@ -1,0 +1,47 @@
+name: Transcribe Release Audio
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [transcribe_self_renew, transcribe_ready]
+  schedule:
+    - cron: '*/30 * * * *'
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  transcribe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /home/runner/.cache/pip
+            /home/runner/.cache/torch
+            /home/runner/.cache/modelscope
+            /home/runner/.cache/huggingface
+          key: transcribe-v3-${{ runner.os }}
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install --timeout 120 torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --timeout 120 torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install --timeout 120 funasr
+          pip install --timeout 120 requests
+      - name: Transcribe all untranscribed audio
+        run: python transcribe_release.py
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
