@@ -238,7 +238,7 @@ body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);co
 
 <script>
 
-var R = 'willisfeng/douyin', A = 'https://api.github.com', T = 'ghp_ouhWDPcm4bs' + 'hHATGN5vBRb5P6v9HHi1o7JbC';
+var R = 'willisfeng/douyin', A = 'https://api.github.com';
 
 var as = [], rs = [], rm = [], pk = [];
 
@@ -320,7 +320,7 @@ async function lo(){
 
     var rt='';
 
-    try{var r2=await fetch(A+'/repos/'+R+'/contents/rooms.txt',{headers:{Accept:'application/vnd.github+json',Authorization:'Bearer '+T}});
+    try{var r2=await fetch(A+'/repos/'+R+'/contents/rooms.txt',{headers:{Accept:'application/vnd.github+json'}});
 
       var d2=await r2.json();if(d2&&d2.content)rt=us(atob(d2.content))}catch(e){}
 
@@ -334,7 +334,7 @@ async function lo(){
 
     try{var lsr=await fetch('https://raw.githubusercontent.com/'+R+'/main/docs/live_status.json?_='+Date.now());if(lsr.ok)ls=await lsr.json()}catch(le){}
 
-    var hd={Accept:'application/vnd.github+json',Authorization:'Bearer '+T};
+    var hd={Accept:'application/vnd.github+json'};
 
     var pa=1,rr=[];
 
@@ -564,7 +564,7 @@ function de(id){
 
   if(!confirm('&#x786E;&#x5B9A;&#x5220;&#x9664;?'))return;
 
-  fetch(A+'/repos/'+R+'/releases/assets/'+id,{method:'DELETE',headers:{Accept:'application/vnd.github.v3+json',Authorization:'Bearer '+T}}).then(function(r){
+  fetch(A+'/repos/'+R+'/releases/assets/'+id,{method:'DELETE',headers:{Accept:'application/vnd.github.v3+json'}}).then(function(r){
 
     if(r.ok||r.status===204){st('&#x2705; ok');lo()}else{st('&#x274C; '+r.status)}
 
@@ -676,7 +676,7 @@ function svRm(){
 
   var txt=rm.map(function(r){return r.id+'='+r.name}).join('\n');
 
-  var hd={Accept:'application/vnd.github+json',Authorization:'Bearer '+T,'Content-Type':'application/json'};
+  var hd={Accept:'application/vnd.github+json','Content-Type':'application/json'};
 
   fetch(A+'/repos/'+R+'/contents/rooms.txt',{headers:hd}).then(function(r){return r.json()}).then(function(d){
 
