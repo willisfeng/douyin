@@ -56,6 +56,13 @@ def parse_filename(name):
     if m0:
         return {"id": m0.group(1), "s": m0.group(2), "e": None}
 
+    # 0.5) ass/transcript format: roomid_seq.YYYYMMDD_HHMMSS.ext
+    # e.g. 215933010618_000.20260528_030014.ass
+    if len(parts) >= 3:
+        m0a = re.match(r"^(\d+)_(\d{3})$", pre)
+        if m0a and re.match(r"^\d{8}_\d{6}$", parts[1]):
+            return {"id": m0a.group(1), "s": parts[1], "e": None}
+
     # 1) roomid_start~end
     m = re.match(r"^(\d+)_(\d{8}_\d{6})~(\d{8}_\d{6})$", pre)
     if m:
