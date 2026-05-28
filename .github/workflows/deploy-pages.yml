@@ -7,6 +7,7 @@ on:
       - 'docs/index.html'
       - 'docs/transcripts.html'
       - 'docs/transcripts_index.json'
+      - 'docs/releases_index.json'
       - '.github/workflows/deploy-pages.yml'
   #workflow_dispatch:
   schedule:
