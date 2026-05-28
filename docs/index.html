@@ -296,7 +296,13 @@ function bp(){
 
     var pk=a.st?ak+'|'+(a.st||'')+'|'+(a.et||''):ak+'|'+a.c.slice(0,10);
 
-    if(!g[pk]){var tdk=a.c.slice(0,10);if(tdk.length>10)tdk=tdk.slice(0,10);g[pk]={an:ak,ri:a.ri,st:a.st,et:a.et,it:[],dk:tdk};}
+    // dk: use st date if available, otherwise fallback to c
+    var tdk=a.st?a.st.slice(0,4)+'-'+a.st.slice(4,6)+'-'+a.st.slice(6,8):a.c.slice(0,10);
+    if(!g[pk]){g[pk]={an:ak,ri:a.ri,st:a.st,et:a.et,it:[],dk:tdk};}
+    else if(tdk!==g[pk].dk&&a.st){
+      // If st-based date differs from existing, prefer the st-based one
+      g[pk].dk=tdk;
+    }
 
     g[pk].it.push(a);
 
