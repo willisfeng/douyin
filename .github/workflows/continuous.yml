@@ -102,7 +102,11 @@ jobs:
             git config user.email "actions@github.com"
             git add docs/releases_index.json
             git commit -m "Update releases_index.json [skip ci]"
-            git push origin main
+            for i in 1 2 3; do
+              git pull --rebase origin main && git push origin main && break
+              echo "Retry $i..."
+              sleep 3
+            done
           fi
       - name: Self-renew (trigger next run, dedup)
         if: always()
