@@ -329,6 +329,24 @@ function bp(){
 
   pk=Object.values(mg);
 
+  // merge packages without st into same room+date packages
+  var mg2=[];
+  pk.forEach(function(p){
+    if(!p.st){
+      // find a package with same ri and same dk that has st
+      var found=false;
+      for(var i=0;i<mg2.length;i++){
+        if(mg2[i].ri===p.ri&&mg2[i].dk===p.dk&&mg2[i].st){
+          mg2[i].it=mg2[i].it.concat(p.it);
+          found=true;
+          break;
+        }
+      }
+      if(!found)mg2.push(p);
+    }else{mg2.push(p)}
+  });
+  pk=mg2;
+
   pk.sort(function(a,b){
 
     var da=a.st?a.st.slice(0,8):a.dk.replace(/-/g,''),db=b.st?b.st.slice(0,8):b.dk.replace(/-/g,'');
