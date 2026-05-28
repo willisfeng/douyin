@@ -2,7 +2,7 @@
   "215933010618": {
     "live": true,
     "recording": true,
-    "start_ts": 1780007277,
+    "start_ts": 1780007339,
     "name": "微微在日本农村",
     "checked_at": 1780008920
   },
@@ -56,9 +56,9 @@
     "checked_at": 1780008920
   },
   "673814862790": {
-    "live": true,
-    "recording": true,
-    "start_ts": 1780008823,
+    "live": false,
+    "recording": false,
+    "start_ts": null,
     "name": "果哥游南越(中越夫妻）",
     "checked_at": 1780008920
   },
