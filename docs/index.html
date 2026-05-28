@@ -216,7 +216,7 @@ body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);co
 
   <table class="room-tb" id="rt"><thead><tr><th>#</th><th>&#x623F;&#x95F4; ID</th><th>&#x4E3B;&#x64AD;</th><th>&#x72B6;&#x6001;</th><th>&#x65F6;&#x957F;</th><th></th></tr></thead><tbody id="rb"></tbody></table>
 
-  <div style="margin-top:16px"><button onclick="svRm()">&#x1F4BE; &#x4FDD;&#x5B58;</button><span id="rs" style="margin-left:12px;color:var(--text-dim);font-size:13px"></span></div>
+  <div style="margin-top:16px"><span id="rs" style="margin-left:12px;color:var(--text-dim);font-size:13px"></span></div>
 
 </div>
 
@@ -238,15 +238,11 @@ body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);co
 
 <script>
 
-var R = 'willisfeng/douyin', A = 'https://api.github.com';
+var R = 'willisfeng/douyin', RAW = 'https://raw.githubusercontent.com/'+R+'/main';
 
-var as = [], rs = [], rm = [], pk = [];
-
-function us(s){return decodeURIComponent(Array.prototype.map.call(s,function(c){return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)}).join(''))}
+var as = [], rm = [], pk = [];
 
 function fs(b){if(!b)return '-';if(b<1048576)return(b/1024).toFixed(1)+'K';if(b<1073741824)return(b/1048576).toFixed(1)+'M';return(b/1073741824).toFixed(2)+'G'}
-
-function gt(fn){var f=fn.toLowerCase();if(f.endsWith(".mp4")||f.endsWith(".flv")||f.endsWith(".webm")||f.endsWith(".mkv"))return"v";if(f.endsWith(".wav")||f.endsWith(".mp3")||f.endsWith(".aac")||f.endsWith(".ogg"))return"a";if(f.endsWith(".srt"))return"s";return"t"}
 
 function gi(t){return{v:'🎬',a:'🎵',t:'📄',s:'💬'}[t]||'📄'}
 
@@ -255,58 +251,6 @@ function gl(t){return{v:'视频',a:'音频',t:'文字',s:'SRT'}[t]||''}
 function eh(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
 function fl(d){return new Date(d).toLocaleString([],{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
-
-function pfn(n){
-
-  var parts=n.split('.');
-
-  if(!parts[0])return null;
-
-  var pre=parts[0]; // base name before ext
-
-  // 0) segment format: roomid_start_seq
-
-  var m0=pre.match(/^(\d+)_(\d{8}_\d{6})_\d{3}$/);
-
-  if(m0)return{id:m0[1],s:m0[2],e:null};
-
-  // 1) roomid_start~end
-
-  var m=pre.match(/^(\d+)_(\d{8}_\d{6})~(\d{8}_\d{6})$/);
-
-  if(m)return{id:m[1],s:m[2],e:m[3]};
-
-  // 2) roomid_start_end
-
-  m=pre.match(/^(\d+)_(\d{8}_\d{6})_(\d{8}_\d{6})$/);
-
-  if(m)return{id:m[1],s:m[2],e:m[3]};
-
-  // 3) roomid_start.end (dot-separated end in same name)
-
-  if(parts.length>=3){
-
-    var m2=pre.match(/^(\d+)_(\d{8}_\d{6})$/);
-
-    if(m2&&parts[1].match(/^\d{8}_\d{6}$/))return{id:m2[1],s:m2[2],e:parts[1]};
-
-  }
-
-  // 4) roomid_FULL_HD1_start
-
-  m=pre.match(/^(\d+)_[A-Z0-9_]+_(\d{8}_\d{6})$/);
-
-  if(m)return{id:m[1],s:m[2],e:null};
-
-  // 5) roomid_start
-
-  m=pre.match(/^(\d+)_(\d{8}_\d{6})$/);
-
-  if(m)return{id:m[1],s:m[2],e:null};
-
-  return null;
-
-}
 
 function ts(d){return new Date(d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)+'T'+d.slice(9,11)+':'+d.slice(11,13)+':'+d.slice(13,15)+'Z')}
 
@@ -318,53 +262,17 @@ async function lo(){
 
   try{
 
-    var rt='';
+    // Load pre-built index (0 API calls, no rate limit)
+    var idx=await fetch(RAW+'/docs/releases_index.json?_='+Date.now());
+    if(!idx.ok)throw new Error('HTTP '+idx.status);
+    var data=await idx.json();
 
-    try{var r2=await fetch(A+'/repos/'+R+'/contents/rooms.txt',{headers:{Accept:'application/vnd.github+json'}});
-
-      var d2=await r2.json();if(d2&&d2.content)rt=us(atob(d2.content))}catch(e){}
-
-    if(!rt)try{var r=await fetch('https://raw.githubusercontent.com/'+R+'/main/rooms.txt?_='+Date.now());if(r.ok)rt=await r.text()}catch(e2){}
-
-    rm=[];if(rt)rt.split('\n').forEach(function(l){l=l.trim();if(!l||l[0]=='#')return;var p=l.split('=');rm.push({id:p[0].trim(),name:(p[1]||p[0]).trim()})});
+    rm=data.rooms||[];
+    as=data.assets||[];
 
     // Load live status
-
     ls={};
-
-    try{var lsr=await fetch('https://raw.githubusercontent.com/'+R+'/main/docs/live_status.json?_='+Date.now());if(lsr.ok)ls=await lsr.json()}catch(le){}
-
-    var hd={Accept:'application/vnd.github+json'};
-
-    var pa=1,rr=[];
-
-    while(true){
-
-      var res=await fetch(A+'/repos/'+R+'/releases?per_page=100&page='+pa,{headers:hd});
-
-      if(!res.ok)break;var da=await res.json();if(!da.length)break;rr=rr.concat(da);pa++;
-
-    }
-
-    rs=rr.filter(function(r){return r.assets&&r.assets.length});
-
-    var nm={};
-
-    rs.forEach(function(r){(r.body||'').split('\n').forEach(function(l){var i=l.indexOf('/');if(i>0&&i<l.length-1)nm[l.substring(i+1)]=l.substring(0,i)})});
-
-    as=[];
-
-    rs.forEach(function(r){r.assets.forEach(function(a){
-
-      if(a.name.indexOf('_meta.')>=0&&a.name.endsWith('.json'))return;if(a.name.match(/_meta\.json$/))return;
-
-      var t=gt(a.name),p=pfn(a.name),id=p?p.id:null,an=id?gb(id):null;
-
-      if(!an&&id&&nm[a.name])an=nm[a.name];if(!an)an=id||'oth';
-
-      as.push({id:a.id,n:a.name,z:a.size,u:a.browser_download_url,c:a.created_at||r.created_at,ty:t,ri:id,an:an,st:p?p.s:null,et:p?p.e:null});
-
-    })});
+    try{var lsr=await fetch(RAW+'/docs/live_status.json?_='+Date.now());if(lsr.ok)ls=await lsr.json()}catch(le){}
 
     bp();rrb();ud();
 
@@ -542,9 +450,7 @@ function od(an,pi){
 
       h+='<div class="fitem"><div class="fi"><div class="fn">'+eh(a.n)+'</div><div class="fm">'+fs(a.z)+'</div></div>';
 
-      h+='<div class="fa"><a href="'+eh(a.u)+'" target="_blank">&#x2B07;</a>';
-
-      h+='<button class="ddel" onclick="de('+a.id+')">&#x2715;</button></div></div>';
+      h+='<div class="fa"><a href="'+eh(a.u)+'" target="_blank">&#x2B07;</a></div></div>';
 
     });
 
@@ -559,18 +465,6 @@ function od(an,pi){
 }
 
 function cls(id){document.getElementById(id).classList.remove('show')}
-
-function de(id){
-
-  if(!confirm('&#x786E;&#x5B9A;&#x5220;&#x9664;?'))return;
-
-  fetch(A+'/repos/'+R+'/releases/assets/'+id,{method:'DELETE',headers:{Accept:'application/vnd.github.v3+json'}}).then(function(r){
-
-    if(r.ok||r.status===204){st('&#x2705; ok');lo()}else{st('&#x274C; '+r.status)}
-
-  }).catch(function(){st('&#x274C; err')});
-
-}
 
 function st(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2000)}
 
@@ -668,31 +562,7 @@ function addRm(){
 
   document.getElementById('ni').value='';document.getElementById('nn').value='';
 
-  svRm();
-
-}
-
-function svRm(){
-
-  var txt=rm.map(function(r){return r.id+'='+r.name}).join('\n');
-
-  var hd={Accept:'application/vnd.github+json','Content-Type':'application/json'};
-
-  fetch(A+'/repos/'+R+'/contents/rooms.txt',{headers:hd}).then(function(r){return r.json()}).then(function(d){
-
-    fetch(A+'/repos/'+R+'/contents/rooms.txt',{
-
-      method:'PUT',headers:hd,
-
-      body:JSON.stringify({message:'update rooms',content:btoa(unescape(encodeURIComponent(txt))),sha:d.sha})
-
-    }).then(function(r){return r.json()}).then(function(){
-
-      st('ok');document.getElementById('rs').textContent='saved';
-
-    }).catch(function(e){document.getElementById('rs').textContent='err: '+e.message});
-
-  }).catch(function(){document.getElementById('rs').textContent='err'});
+  st('房间添加仅本地生效，不会保存到服务器');
 
 }
 
@@ -705,4 +575,3 @@ cls('dm');
 </body>
 
 </html>
-

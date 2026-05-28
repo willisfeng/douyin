@@ -88,6 +88,22 @@ jobs:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_RUN_ID: ${{ github.run_id }}
+      - name: Build releases index
+        if: always()
+        run: python3 build_releases_index.py
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Commit releases index
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain docs/releases_index.json)" ]; then
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git add docs/releases_index.json
+            git commit -m "Update releases_index.json [skip ci]"
+            git push origin main
+          fi
       - name: Self-renew (trigger next run, dedup)
         if: always()
         run: |
