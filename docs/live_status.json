@@ -1,8 +1,8 @@
 {
   "215933010618": {
-    "live": false,
-    "recording": false,
-    "start_ts": null,
+    "live": true,
+    "recording": true,
+    "start_ts": 1780093105,
     "name": "微微在日本农村",
     "checked_at": 1780093126
   },
