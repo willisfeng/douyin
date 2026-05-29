@@ -51,7 +51,12 @@ def parse_filename(name):
         return None
     pre = parts[0]
 
-    # 0) segment format: roomid_start_seq
+    # 0) page_data format: page_data_roomid.YYYYMMDD_HHMMSS.json
+    m_pd = re.match(r"^page_data_(\d{9,})$", pre)
+    if m_pd and len(parts) >= 2 and re.match(r"^\d{8}_\d{6}$", parts[1]):
+        return {"id": m_pd.group(1), "s": parts[1], "e": None}
+
+    # 0.1) segment format: roomid_start_seq
     m0 = re.match(r"^(\d+)_(\d{8}_\d{6})_\d{3}$", pre)
     if m0:
         return {"id": m0.group(1), "s": m0.group(2), "e": None}
