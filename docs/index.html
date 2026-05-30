@@ -570,6 +570,8 @@ function addRm(){
   rm.push({id:id,name:na||id});
 
   rrb();
+  bp(); // re-group assets with new room
+  rp();
 
   document.getElementById('ni').value='';document.getElementById('nn').value='';
 
