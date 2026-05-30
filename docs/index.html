@@ -286,6 +286,9 @@ function bp(){
 
   as.forEach(function(a){
 
+    // skip .log files (ffmpeg/audio logs)
+    if(a.n&&a.n.endsWith('.log'))return;
+
     var ak='oth';
 
     if(a.ri&&gb(a.ri))ak=gb(a.ri);
