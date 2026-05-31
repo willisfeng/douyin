@@ -1,8 +1,8 @@
 import urllib.request as u, base64 as b, json, os, sys, time
 
 GH_TOKEN = os.environ.get('GH_TOKEN', '')
-OWNER = 'tangwei880620-rgb'
-REPO = 'douyin-recorder'
+OWNER = 'willisfeng'
+REPO = 'douyin'
 hd = {'Authorization': 'Bearer ' + GH_TOKEN, 'Accept': 'application/vnd.github+json'} if GH_TOKEN else {'Accept': 'application/vnd.github+json'}
 
 def api(path):
