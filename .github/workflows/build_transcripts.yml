@@ -21,9 +21,11 @@ jobs:
           git config user.email "bot@users.noreply.github.com"
           git add docs/transcripts_index.json
           git diff --quiet && git diff --staged --quiet || git commit -m "update transcripts index"
-          for i in 1 2 3; do
-            if git pull --rebase origin main && git push; then
-              break
+          for i in 1 2 3 4 5; do
+            git fetch origin main
+            if git rebase origin/main && git push; then
+              exit 0
             fi
-            sleep 5
+            sleep $((5 + RANDOM % 10))
           done
+          exit 1
