@@ -100,24 +100,45 @@ body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);co
 </div>
 
 <script>
+/* ── Pure JS SHA-1 (works everywhere, no crypto.subtle needed) ── */
+function sha1(str){
+  function R(n,b){return(n<<b)|(n>>>(32-b))}
+  var i,j,t,l=str.length*8,a=((l+64>>9)<<4)+15,o=Array(a),w=Array(80);
+  for(i=0;i<l;i+=8) o[i>>5]|=(str.charCodeAt(i/8)&255)<<(24-i%32);
+  o[i>>5]|=128<<(24-i%32); o[a-1]=l;
+  var h0=1732584193,h1=4023233417,h2=2562383102,h3=271733878,h4=3285377520;
+  for(i=0;i<a;i+=16){
+    for(j=0;j<16;j++) w[j]=o[i+j];
+    for(j=16;j<80;j++) w[j]=R(w[j-3]^w[j-8]^w[j-14]^w[j-16],1);
+    var a0=h0,b=h1,c=h2,d=h3,e=h4;
+    for(j=0;j<80;j++){
+      if(j<20){t=(R(a0,5)+(b&c|~b&d)+e+w[j]+1518500249)|0}
+      else if(j<40){t=(R(a0,5)+(b^c^d)+e+w[j]+1859775393)|0}
+      else if(j<60){t=(R(a0,5)+(b&c|b&d|c&d)+e+w[j]+2400959708)|0}
+      else{t=(R(a0,5)+(b^c^d)+e+w[j]+3395469782)|0}
+      e=d;d=c;c=R(b,30);b=a0;a0=t;
+    }
+    h0=(h0+a0)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0;
+  }
+  function X(n){return((n>>>0).toString(16)).slice(-8)}
+  return X(h0)+X(h1)+X(h2)+X(h3)+X(h4);
+}
+
 /* ── Password Protection ── */
-var PW_HASH = 'ea52b659f03ec6d7eb0bb715bf55ec924e6099fb';
+var PW_HASH = 'd723ac5d1829ce02bd59666c3b00d41a50274e13';
 
 function checkPw(){
   var p = document.getElementById('pwInput').value.trim();
   if(!p) return;
-  var enc = new TextEncoder().encode(p);
-  crypto.subtle.digest('SHA-1', enc).then(function(hash){
-    var hx = Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
-    if(hx === PW_HASH){
-      document.getElementById('pwGate').classList.add('hidden');
-      sessionStorage.setItem('_pw_ok', '1');
-    } else {
-      document.getElementById('pwError').style.display = 'block';
-      document.getElementById('pwInput').value = '';
-      document.getElementById('pwInput').focus();
-    }
-  });
+  var hx = sha1(p);
+  if(hx === PW_HASH){
+    document.getElementById('pwGate').classList.add('hidden');
+    sessionStorage.setItem('_pw_ok', '1');
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
 }
 if(sessionStorage.getItem('_pw_ok') === '1'){
   document.getElementById('pwGate').classList.add('hidden');
@@ -140,7 +161,7 @@ let loadedContent = {};
 
 async function init(){
 try{
-const r=await fetch('https://raw.githubusercontent.com/tangwei880620-rgb/douyin-recorder/main/docs/transcripts_index.json');
+const r=await fetch('https://raw.githubusercontent.com/willisfeng/douyin/main/docs/transcripts_index.json');
 if(!r.ok)throw new Error('HTTP '+r.status);
 data=await r.json();
 document.getElementById('loading').style.display='none';
@@ -162,14 +183,28 @@ function render(){
 let html='';
 for(const a of data.anchors){
 const items=a.transcripts;
+/* Group by date */
+var groups={};
+items.forEach(function(it){
+  var d=it.start.slice(0,8); /* YYYYMMDD */
+  if(!groups[d]) groups[d]={date:d, items:[]};
+  groups[d].items.push(it);
+});
+var groupList=Object.values(groups).sort(function(a,b){return b.date.localeCompare(a.date)});
+
 html+='<div class="anchor-group">'+
 '<div class="anchor-header" onclick="toggleAnchor(this)">'+
 '<span class="arrow">▶</span>'+
 '<span class="name">'+esc(a.name)+'</span>'+
-'<span class="count">'+items.length+' 条</span>'+
+'<span class="count">'+groupList.length+' 天 · '+items.length+' 条</span>'+
 '</div>'+
 '<div class="anchor-body">';
-for(const it of items){
+
+for(const g of groupList){
+var gItems=g.items.sort(function(a,b){return a.start.localeCompare(b.start)});
+var dateLabel=g.date.slice(0,4)+'-'+g.date.slice(4,6)+'-'+g.date.slice(6,8);
+html+='<div style="font-size:14px;font-weight:700;color:var(--accent2);margin:12px 0 8px;padding:6px 12px;background:var(--surface3);border-radius:8px;display:inline-block">📅 '+dateLabel+'</div>';
+for(const it of gItems){
 const start=fmtTS(it.start);
 html+='<div class="t-item">'+
 '<div class="t-header" onclick="toggleT(this)">'+
@@ -179,6 +214,7 @@ html+='<div class="t-item">'+
 '</div>'+
 '<div class="t-body"><div class="txt" data-url="'+it.url+'"><div class="loading-msg">点击展开文案...</div></div></div>'+
 '</div>';
+}
 }
 html+='</div></div>';
 }
