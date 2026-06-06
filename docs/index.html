@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!-- v2: static index, no API calls -->
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>抖音录制文件浏览器</title>
+
+<style>
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a28;--surface3:#242440;--border:#2a2a45;--text:#e0e0f0;--text-dim:#8888aa;--accent:#ff4d6a;--accent2:#ffb347;--accent3:#6c5ce7;--green:#00e676;--radius:10px}
+
+body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── Password Gate ── */
+.pw-gate{display:flex;position:fixed;inset:0;background:var(--bg);z-index:9999;justify-content:center;align-items:center;flex-direction:column;gap:20px}
+.pw-gate.hidden{display:none}
+.pw-gate .pw-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px 36px;width:90%;max-width:400px;text-align:center}
+.pw-gate h2{font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.pw-gate p{color:var(--text-dim);font-size:13px;margin-bottom:20px}
+.pw-gate input{width:100%;padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:15px;outline:none;text-align:center;font-family:inherit;letter-spacing:4px}
+.pw-gate input:focus{border-color:var(--accent3)}
+.pw-gate button{width:100%;padding:12px;border-radius:8px;background:var(--accent3);border:none;color:#fff;font-size:15px;cursor:pointer;font-family:inherit;font-weight:600;margin-top:12px}
+.pw-gate button:hover{opacity:.9}
+.pw-gate .pw-error{color:var(--accent);font-size:13px;margin-top:8px;display:none}
+
+.container{max-width:1200px;margin:0 auto;padding:24px}
+
+.header{background:linear-gradient(135deg,#0a0a1a,#1a0a2e,#0a1a2e);border-bottom:1px solid var(--border);padding:40px 24px 32px}
+
+.header-content{max-width:1200px;margin:0 auto}
+
+.header h1{font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+.header p{color:var(--text-dim);font-size:14px;margin-top:6px}
+
+.stats-bar{display:flex;gap:24px;margin-top:20px;flex-wrap:wrap}
+
+.stat-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim)}
+
+.stat-item .num{color:var(--text);font-weight:700;font-size:16px}
+
+.tab-bar{display:flex;gap:8px;max-width:1200px;margin:16px auto 0;padding:0 24px}
+
+.tab-btn{padding:10px 20px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:14px;cursor:pointer;font-family:inherit}
+
+.tab-btn:hover{background:var(--surface3);color:var(--text)}
+
+.tab-btn.active{background:var(--accent3);border-color:var(--accent3);color:#fff}
+
+.filters{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
+
+.filters input,.filters select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+
+.filters input:focus,.filters select:focus{border-color:var(--accent)}
+
+.filters .search-wrap{position:relative;flex:1;min-width:200px}
+
+.filters .search-wrap input{width:100%;padding-left:40px}
+
+.filters .search-wrap span{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-dim)}
+
+.packages-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+
+.pkg-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:all .25s}
+
+.pkg-card:hover{background:var(--surface2);border-color:var(--accent3);transform:translateY(-1px);box-shadow:0 4px 16px rgba(108,92,231,.12)}
+
+.pkg-card .anchor-name{font-size:16px;font-weight:700;color:var(--accent2)}
+
+.pkg-card .time-range{font-size:14px;color:var(--text);margin:10px 0}
+
+.pkg-card .file-badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px;background:var(--surface3);color:var(--text-dim);margin:2px}
+
+.loading,.empty-state{text-align:center;padding:60px;color:var(--text-dim)}
+
+.spinner{width:40px;height:40px;border:3px solid var(--surface2);border-top-color:var(--accent);border-radius:50%;animation:s1 .8s linear infinite;margin:0 auto 16px}
+
+@keyframes s1{to{transform:rotate(360deg)}}
+
+.footer{text-align:center;padding:24px;color:var(--text-dim);font-size:12px;border-top:1px solid var(--border)}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;justify-content:center;align-items:center}
+
+.overlay.show{display:flex}
+
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:92%;max-width:900px;max-height:90vh;overflow:auto;box-shadow:0 24px 80px rgba(0,0,0,.7)}
+
+.modal-top{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;gap:12px}
+
+.modal-top .mtitle{flex:1;font-weight:500}
+
+.modal-top button{background:var(--surface2);border:none;border-radius:6px;padding:6px 12px;cursor:pointer;color:var(--text-dim);font-size:14px}
+
+.modal-top button:hover{color:var(--text)}
+
+.modal-body{padding:20px}
+
+.fgroup{margin-bottom:16px}
+
+.fgroup h3{font-size:13px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+
+.fitem{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px}
+
+.fitem:hover{background:var(--surface3)}
+
+.fitem .fi{flex:1;min-width:0}
+
+.fitem .fn{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.fitem .fm{font-size:11px;color:var(--text-dim);margin-top:2px}
+
+.fitem .fa{display:flex;gap:4px}
+
+.fitem .fa a,.fitem .fa button{width:32px;height:32px;border-radius:6px;background:var(--surface3);border:none;color:var(--text-dim);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;text-decoration:none}
+
+.fitem .fa a:hover,.fitem .fa button:hover{background:var(--accent3);color:#fff}
+
+.fitem .fa .ddel:hover{background:var(--accent)!important}
+
+.room-mgr{max-width:1200px;margin:0 auto;padding:0 24px;display:none}
+
+.room-mgr.show{display:block}
+
+.live-dot{font-size:16px;margin-right:4px}
+
+.live-dot.live{animation:pulse 2s infinite}
+
+@keyframes pulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
+
+.room-tb{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
+
+.room-tb th{padding:10px 12px;border-bottom:2px solid var(--border);color:var(--text-dim);font-size:12px;text-align:left;text-transform:uppercase}
+
+.room-tb td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+
+.room-tb tr:hover td{background:var(--surface2)}
+
+.room-rid{font-size:12px;color:var(--accent3)}
+
+.room-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+
+.room-actions input{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;font-family:inherit;min-width:140px;flex:1}
+
+.room-actions input:focus{border-color:var(--accent)}
+
+.room-actions button{background:var(--accent);border:none;border-radius:8px;padding:10px 20px;color:#fff;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600}
+
+.room-actions button.sec{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:10px 20px;border-radius:8px;z-index:2000;opacity:0;transition:opacity .3s;pointer-events:none}
+
+.toast.show{opacity:1}
+
+@media(max-width:640px){.header{padding:24px 16px 20px}.container{padding:16px}.packages-grid{grid-template-columns:1fr}.filters{flex-direction:column}.filters .search-wrap{min-width:100%}}
+
+.dur{display:inline-block;margin-top:4px;font-size:13px;color:var(--accent3);background:var(--bg);padding:2px 8px;border-radius:8px;}</style>
+
+</head>
+
+<body>
+
+<!-- ── Password Gate ── -->
+<div class="pw-gate" id="pwGate">
+  <div class="pw-card">
+    <h2>🔒 请输入访问密码</h2>
+    <p>此页面内容受密码保护</p>
+    <input type="password" id="pwInput" placeholder="请输入密码" onkeydown="if(event.key==='Enter')checkPw()">
+    <button onclick="checkPw()">验证</button>
+    <div class="pw-error" id="pwError">密码错误，请重试</div>
+  </div>
+</div>
+
+<div class="header">
+
+  <div class="header-content">
+
+    <h1>&#x1F3AC; &#x6296;&#x97F3; &#x5F55;&#x5236; &#x6587;&#x4EF6; &#x6D4F;&#x89C8;&#x5668;</h1>
+
+    <p>&#x76F4;&#x64AD;&#x95F4; &#x5F55;&#x5236; / &#x97F3;&#x9891; / &#x8F6C;&#x5F55; &#x6587;&#x5B57;</p>
+
+    <div class="stats-bar">
+
+      <div class="stat-item"><span class="num" id="sp">-</span> &#x5F55;&#x5236;&#x5305;</div>
+
+      <div class="stat-item"><span class="num" id="sf">-</span> &#x6587;&#x4EF6;</div>
+
+      <div class="stat-item"><span class="num" id="sa">-</span> &#x4E3B;&#x64AD;</div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="tab-bar">
+
+  <button class="tab-btn active" id="tb1" onclick="sw('browse')">&#x1F4C2; &#x6D4F;&#x89C8;</button>
+
+  <button class="tab-btn" id="tb2" onclick="sw('rooms')">&#x1F4CB; &#x623F;&#x95F4;</button>
+
+</div>
+
+<div id="bp" class="container">
+
+  <div class="filters">
+
+    <div class="search-wrap"><span>&#x1F50D;</span><input id="si" placeholder="&#x641C;&#x7D22;..." oninput="rp()"></div>
+
+    <select id="af" onchange="rp()"><option value="all">&#x5168;&#x90E8;</option></select>
+
+    <select id="df" onchange="rp()"><option value="all">&#x5168;&#x90E8;&#x65E5;&#x671F;</option></select>
+
+  </div>
+
+  <div id="ct"><div class="loading"><div class="spinner"></div><p>&#x52A0;&#x8F7D;&#x4E2D;...</p></div></div>
+
+</div>
+
+<div id="rm" class="room-mgr">
+
+  <div class="room-actions">
+
+    <input id="ni" placeholder="&#x623F;&#x95F4; ID" style="flex:0 0 180px">
+
+    <input id="nn" placeholder="&#x4E3B;&#x64AD;&#x6635;&#x79F0;">
+
+    <button onclick="addRm()">+ &#x6DFB;&#x52A0;</button>
+
+    <button class="sec" onclick="lo();setTimeout(function(){rrb()},500)">&#x21BB;</button>
+
+  </div>
+
+  <table class="room-tb" id="rt"><thead><tr><th>#</th><th>&#x623F;&#x95F4; ID</th><th>&#x4E3B;&#x64AD;</th><th>&#x72B6;&#x6001;</th><th>&#x65F6;&#x957F;</th><th></th></tr></thead><tbody id="rb"></tbody></table>
+
+  <div style="margin-top:16px"><span id="rs" style="margin-left:12px;color:var(--text-dim);font-size:13px"></span></div>
+
+</div>
+
+<div class="footer">douyin-recorder</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="dm">
+
+  <div class="modal">
+
+    <div class="modal-top"><div class="mtitle" id="dt"></div><button onclick="cls('dm')">&#x2715;</button></div>
+
+    <div class="modal-body" id="db"></div>
+
+  </div>
+
+</div>
+
+<script>
+
+/* ── Password Protection ── */
+var PW_HASH = 'ea52b659f03ec6d7eb0bb715bf55ec924e6099fb'; /* SHA-1 of your password */
+var PROXY_BASE = 'https://gh.llkk.cc/'; /* GitHub download proxy (no VPN needed) */
+var R = 'willisfeng/douyin', RAW = 'https://raw.githubusercontent.com/'+R+'/main';
+
+function checkPw(){
+  var p = document.getElementById('pwInput').value.trim();
+  if(!p) return;
+  /* Simple hash: use SubtleCrypto SHA-256 → hex */
+  var enc = new TextEncoder().encode(p);
+  crypto.subtle.digest('SHA-1', enc).then(function(hash){
+    var hx = Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+    if(hx === PW_HASH){
+      document.getElementById('pwGate').classList.add('hidden');
+      sessionStorage.setItem('_pw_ok', '1');
+    } else {
+      document.getElementById('pwError').style.display = 'block';
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwInput').focus();
+    }
+  });
+}
+
+/* Check if already authenticated this session */
+if(sessionStorage.getItem('_pw_ok') === '1'){
+  document.getElementById('pwGate').classList.add('hidden');
+}
+
+/* ── Download Proxy Helper ── */
+/* Rewrite GitHub download URLs through proxy for mainland China access */
+function proxyUrl(u){
+  if(!u) return u;
+  /* Proxy GitHub release asset URLs and raw.githubusercontent.com */
+  if(u.indexOf('github.com/') >= 0 && (u.indexOf('/releases/download/') >= 0 || u.indexOf('/releases/assets/') >= 0)){
+    return PROXY_BASE + u;
+  }
+  if(u.indexOf('raw.githubusercontent.com/') >= 0){
+    return PROXY_BASE + u;
+  }
+  return u;
+}
+
+var as = [], rm = [], pk = [];
+
+function fs(b){if(!b)return '-';if(b<1048576)return(b/1024).toFixed(1)+'K';if(b<1073741824)return(b/1048576).toFixed(1)+'M';return(b/1073741824).toFixed(2)+'G'}
+
+function gi(t){return{v:'🎬',a:'🎵',t:'📄',s:'💬'}[t]||'📄'}
+
+function gl(t){return{v:'视频',a:'音频',t:'文字',s:'SRT'}[t]||''}
+
+function eh(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function fl(d){return new Date(d).toLocaleString([],{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
+
+function ts(d){return new Date(d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)+'T'+d.slice(9,11)+':'+d.slice(11,13)+':'+d.slice(13,15)+'Z')}
+
+function ft(s,e){var a=fl(ts(s));return e?a+' ~ '+fl(ts(e)):a}
+
+function gb(i){if(rm)for(var j=0;j<rm.length;j++)if(rm[j].id===i)return rm[j].name;return null}
+
+async function lo(){
+
+  try{
+
+    // Load pre-built index (0 API calls, no rate limit)
+    var idx=await fetch(RAW+'/docs/releases_index.json?_='+Date.now());
+    if(!idx.ok)throw new Error('HTTP '+idx.status);
+    var data=await idx.json();
+
+    rm=data.rooms||[];
+    as=data.assets||[];
+
+    // Load live status
+    ls={};
+    try{var lsr=await fetch(RAW+'/docs/live_status.json?_='+Date.now());if(lsr.ok)ls=await lsr.json()}catch(le){}
+
+    bp();rrb();ud();
+
+  }catch(e){document.getElementById('ct').innerHTML='<div class="empty-state"><p>Error: '+eh(e.message)+'</p></div>'}
+
+}
+
+function bp(){
+
+  var g={};
+
+  as.forEach(function(a){
+
+    // skip .log files (ffmpeg/audio logs)
+    if(a.n&&a.n.endsWith('.log'))return;
+
+    var ak='oth';
+
+    if(a.ri&&gb(a.ri))ak=gb(a.ri);
+
+    else if(a.an&&a.an!='oth'&&a.an!=a.ri)ak=a.an;
+
+    if(a.ri&&rm.some(function(r){return r.id==a.ri}))ak=a.an;
+
+    // Fallback: extract room_id from filename
+    // e.g. "215933010618_000.20260528_030014.ass" or "page_data_847349416634.20260528_083757.json"
+    if(ak==='oth'&&a.n){var fnid=a.n.match(/^(\d{9,})_/)||a.n.match(/^page_data_(\d{9,})\./);if(fnid){var fn=gb(fnid[1]);if(fn)ak=fn;}}
+
+    var pk=a.st?ak+'|'+(a.st||'')+'|'+(a.et||''):ak+'|'+a.c.slice(0,10);
+
+    // dk: use st date if available, otherwise fallback to c
+    var tdk=a.st?a.st.slice(0,4)+'-'+a.st.slice(4,6)+'-'+a.st.slice(6,8):a.c.slice(0,10);
+    if(!g[pk]){g[pk]={an:ak,ri:a.ri,st:a.st,et:a.et,it:[],dk:tdk};}
+    else if(tdk!==g[pk].dk&&a.st){
+      // If st-based date differs from existing, prefer the st-based one
+      g[pk].dk=tdk;
+    }
+
+    g[pk].it.push(a);
+
+  });
+
+  pk=Object.values(g);
+
+  // merge same room+date packages (group by ri + dk)
+  var mg={};
+  pk.forEach(function(p){
+    var mk=(p.ri||'')+'|'+p.dk;
+    if(!mg[mk]){mg[mk]=p;}
+    else{
+      mg[mk].it=mg[mk].it.concat(p.it);
+      // keep earliest st and latest et
+      if(!mg[mk].st&&p.st)mg[mk].st=p.st;
+      else if(mg[mk].st&&p.st&&p.st<mg[mk].st)mg[mk].st=p.st;
+      if(!mg[mk].et&&p.et)mg[mk].et=p.et;
+      else if(p.et&&p.et>mg[mk].et)mg[mk].et=p.et;
+    }
+  });
+  pk=Object.values(mg);
+
+  pk.sort(function(a,b){
+
+    var da=a.st?a.st.slice(0,8):a.dk.replace(/-/g,''),db=b.st?b.st.slice(0,8):b.dk.replace(/-/g,'');
+
+    if(da!=db)return db.localeCompare(da);
+
+    return(b.st||'').localeCompare(a.st||'')||(a.an||'').localeCompare(b.an||'');
+
+  });
+
+  pf();rp();
+
+}
+
+function pf(){
+
+  var as2={};pk.forEach(function(p){as2[p.an]=true});
+
+  var sel=document.getElementById('af');sel.innerHTML='<option value="all">&#x5168;&#x90E8;</option>';
+
+  Object.keys(as2).sort(function(a,b){if(a==='oth')return 1;if(b==='oth')return-1;return a.localeCompare(b)}).forEach(function(a){var o=document.createElement('option');o.value=a;o.textContent=a==='oth'?'其他主播':a;sel.appendChild(o)});
+
+  var ds2={};pk.forEach(function(p){ds2[p.dk]=true});
+
+  var sel2=document.getElementById('df');sel2.innerHTML='<option value="all">&#x5168;&#x90E8;&#x65E5;&#x671F;</option>';
+
+  Object.keys(ds2).sort().reverse().forEach(function(d){var o=document.createElement('option');o.value=d;o.textContent=d.slice(5);sel2.appendChild(o)});
+
+  document.getElementById('sp').textContent=pk.length;
+
+  document.getElementById('sf').textContent=as.length;
+
+  document.getElementById('sa').textContent=rm.length;
+
+}
+
+function rp(){
+
+  var q=document.getElementById('si').value.toLowerCase(),af=document.getElementById('af').value,df=document.getElementById('df').value;
+
+  var f=pk.filter(function(p){
+
+    if(af!='all'&&p.an!=af)return false;
+
+    if(df!='all'&&p.dk!=df)return false;
+
+    if(q&&p.an.toLowerCase().indexOf(q)==-1&&(p.ri||'').indexOf(q)==-1)return false;
+
+    return true;
+
+  });
+
+  var el=document.getElementById('ct');
+
+  if(!f.length){el.innerHTML='<div class="empty-state"><p>&#x1F4ED; &#x6CA1;&#x6709;&#x5339;&#x914D;&#x7684;&#x5F55;&#x5236;&#x5305;</p></div>';return}
+
+  var h='<div class="packages-grid">',lastDate='';
+
+  f.forEach(function(p){var pd=p.dk;if(pd!=lastDate){h+='<div style="grid-column:1/-1;font-size:18px;font-weight:700;color:var(--accent2);margin:32px 0 16px;padding:10px 16px;background:var(--surface);border-radius:10px;border-left:4px solid var(--accent3)">\ud83d\udcc5 '+pd.slice(5)+'</div>';lastDate=pd;}
+
+    var ty={};
+
+    p.it.forEach(function(a){ty[a.ty]=(ty[a.ty]||0)+1});
+
+    h+='<div class="pkg-card" onclick="od(\''+p.an+'\','+pk.indexOf(p)+')">';
+
+    var dn=p.an;if(dn==='oth')dn='其他主播';h+='<div class="anchor-name">'+eh(dn)+(p.ri?' <a href="https://live.douyin.com/'+p.ri+'" target="_blank" style="font-size:11px;color:var(--accent3);text-decoration:none">'+p.ri+'</a>':'')+'</div>';
+
+    h+='<div class="time-range">'+(p.st?ft(p.st,p.et):(p.st?'':p.dk.slice(5)))+'</div>';if(p.st&&p.et){var ts=p.st.replace(/_/g,"").match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/),te=p.et.replace(/_/g,"").match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);if(ts&&te){var ds=new Date(te[1],te[2]-1,te[3],te[4],te[5],te[6])-new Date(ts[1],ts[2]-1,ts[3],ts[4],ts[5],ts[6]);ds=Math.floor(ds/1000);if(ds>0){var dh=Math.floor(ds/3600),dm=Math.floor((ds%3600)/60);h+='<div class="dur">'+(dh>0?dh+"h "+dm+"m":dm+"m")+'</div>';}}}else{h+='<div class="dur">--</div>';}h+='<div>';
+
+    for(var k in ty){h+='<span class="file-badge">'+gi(k)+' '+ty[k]+'</span>';}
+
+    h+='</div></div>';
+
+  });
+
+  ;
+
+  el.innerHTML=h;
+
+  document.getElementById('sp').textContent=f.length+'/'+pk.length;
+
+}
+
+
+function pkPeakHtml(p){
+  var mi=p.it.find(function(a){return a.ty=="m"});
+  if(!mi)return "";
+  var el=document.createElement("span");
+  el.className="peak-load";
+  el.textContent="...";
+  fetch(mi.u).then(function(r){return r.json()}).then(function(d){
+    var pk=d.peak_viewers||0;
+    if(pk)el.innerHTML="\ud83d\udce1 "+pk.toLocaleString()+"\u5728\u7EBF";
+    else el.innerHTML="\ud83d\udce1 -";
+    el.className="peak-val";
+  }).catch(function(){el.remove()});
+  return el.outerHTML;
+}
+
+function od(an,pi){
+
+  var p=null;
+
+  if(pi!==undefined&&pi<pk.length&&pk[pi]&&pk[pi].an===an){p=pk[pi];}
+
+  else{for(var i=0;i<pk.length;i++)if(pk[i].an==an){p=pk[i];break;}}
+
+  if(!p)return;
+
+  document.getElementById('dt').textContent=p.an+' 的录制包';
+
+  var gr={v:[],a:[],t:[],s:[]};
+
+  p.it.forEach(function(a){if(gr[a.ty])gr[a.ty].push(a);else gr.t.push(a)});
+
+  var h='<div style="margin-bottom:16px;font-weight:600">'+(p.st?ft(p.st,p.et):(p.st?'':p.dk.slice(5)))+'</div>';
+
+  ['v','a','t','s'].forEach(function(t){
+
+    if(!gr[t].length)return;
+
+    h+='<div class="fgroup"><h3>'+gi(t)+' '+gl(t)+' ('+gr[t].length+')</h3>';
+
+    gr[t].forEach(function(a){
+
+      h+='<div class="fitem"><div class="fi"><div class="fn">'+eh(a.n)+'</div><div class="fm">'+fs(a.z)+'</div></div>';
+
+      h+='<div class="fa"><a href="'+eh(proxyUrl(a.u))+'" target="_blank">&#x2B07;</a></div></div>';
+
+    });
+
+    ;
+
+  });
+
+  document.getElementById('db').innerHTML=h;
+
+  document.getElementById('dm').classList.add('show');
+
+}
+
+function cls(id){document.getElementById(id).classList.remove('show')}
+
+function st(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2000)}
+
+function sw(t){
+
+  document.getElementById('tb1').className='tab-btn'+(t=='browse'?' active':'');
+
+  document.getElementById('tb2').className='tab-btn'+(t=='rooms'?' active':'');
+
+  document.getElementById('bp').style.display=t=='browse'?'block':'none';
+
+  document.getElementById('rm').className='room-mgr'+(t=='rooms'?' show':'');
+
+  if(t=='rooms'){rrb();ud()}
+
+}
+
+function rrb(){
+
+  var h='';
+
+  var now=Math.floor(Date.now()/1000);
+
+  rm.forEach(function(r,i){
+
+    var st=ls&&ls[r.id];
+
+    var dot='\u26AA',sl='',dur='-';
+
+    if(st){
+
+      if(st.live&&st.recording){dot='\ud83d\udfe2';sl='live';var secs=now-st.start_ts;if(secs>0){var m=Math.floor(secs/60);var s=secs%60;dur=m+':'+(s<10?'0':'')+s}}else if(st.live&&!st.recording){dot='\ud83d\udfe2';sl='live';dur='已下播'}else{dot='\ud83d\udd34';sl='off';dur='已下播'}
+
+    }
+
+    h+='<tr><td>'+(i+1)+'</td>';
+
+    h+='<td class="room-rid"><a href="https://live.douyin.com/'+r.id+'" target="_blank" style="color:var(--accent3);text-decoration:none">'+eh(r.id)+'</a></td>';
+
+    h+='<td><input class="room-rid" style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text)" value="'+eh(r.name)+'" oninput="rm['+i+'].name=this.value"></td>';
+
+    h+='<td><span class="live-dot '+sl+'">'+dot+'</span></td>';
+
+    h+='<td style="font-size:12px;color:var(--text-dim);font-variant-numeric:tabular-nums" id="dur_'+r.id+'">'+dur+'</td>';
+
+    h+='<td><button class="ddel" onclick="if(confirm(\'Delete?\'))rm.splice('+i+',1);rrb()" style="background:none;border:1px solid rgba(255,77,106,.3);border-radius:4px;color:var(--accent);cursor:pointer;padding:4px 8px">&#x2715;</button></td></tr>';
+
+  });
+
+  document.getElementById('rb').innerHTML=h;
+
+}
+
+function ud(){
+
+  if(window._lup)clearInterval(window._lup);
+
+  window._lup=setInterval(function(){
+
+    var n2=Math.floor(Date.now()/1000);
+
+    rm.forEach(function(r){
+
+      var st=ls&&ls[r.id];
+
+      if(!st||!st.live||!st.recording||!st.start_ts)return;
+
+      var el=document.getElementById('dur_'+r.id);
+
+      if(!el)return;
+
+      var ss=n2-st.start_ts;
+
+      if(ss<0)return;
+
+      var mm=Math.floor(ss/60),ss2=ss%60;
+
+      el.textContent=mm+':'+(ss2<10?'0':'')+ss2;
+
+    });
+
+  },1000);
+
+}
+
+function addRm(){
+
+  var id=document.getElementById('ni').value.trim(),na=document.getElementById('nn').value.trim();
+
+  if(!id)return;
+
+  rm.push({id:id,name:na||id});
+
+  rrb();
+  bp(); // re-group assets with new room
+  rp();
+
+  document.getElementById('ni').value='';document.getElementById('nn').value='';
+
+  st('房间添加仅本地生效，不会保存到服务器');
+
+}
+
+lo();
+
+cls('dm');
+
+</script>
+
+</body>
+
+</html>
