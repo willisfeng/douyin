@@ -1,0 +1,29 @@
+name: ViewerCountTest
+on: [workflow_dispatch]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        id: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      max-parallel: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Playwright
+        run: |-
+          pip install playwright
+          python -m playwright install chromium --with-deps
+      - name: Open Room
+        run: python run_browser.py
+        env:
+          BROWSER_ID: ${{ matrix.id }}
+          ROOM_URL: https://live.douyin.com/919096107345
