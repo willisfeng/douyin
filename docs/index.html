@@ -18,6 +18,18 @@
 
 body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
+/* ── Password Gate ── */
+.pw-gate{display:flex;position:fixed;inset:0;background:var(--bg);z-index:9999;justify-content:center;align-items:center;flex-direction:column;gap:20px}
+.pw-gate.hidden{display:none}
+.pw-gate .pw-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px 36px;width:90%;max-width:400px;text-align:center}
+.pw-gate h2{font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.pw-gate p{color:var(--text-dim);font-size:13px;margin-bottom:20px}
+.pw-gate input{width:100%;padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:15px;outline:none;text-align:center;font-family:inherit;letter-spacing:4px}
+.pw-gate input:focus{border-color:var(--accent3)}
+.pw-gate button{width:100%;padding:12px;border-radius:8px;background:var(--accent3);border:none;color:#fff;font-size:15px;cursor:pointer;font-family:inherit;font-weight:600;margin-top:12px}
+.pw-gate button:hover{opacity:.9}
+.pw-gate .pw-error{color:var(--accent);font-size:13px;margin-top:8px;display:none}
+
 .container{max-width:1200px;margin:0 auto;padding:24px}
 
 .header{background:linear-gradient(135deg,#0a0a1a,#1a0a2e,#0a1a2e);border-bottom:1px solid var(--border);padding:40px 24px 32px}
@@ -154,6 +166,17 @@ body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);co
 
 <body>
 
+<!-- ── Password Gate ── -->
+<div class="pw-gate" id="pwGate">
+  <div class="pw-card">
+    <h2>🔒 请输入访问密码</h2>
+    <p>此页面内容受密码保护</p>
+    <input type="password" id="pwInput" placeholder="请输入密码" onkeydown="if(event.key==='Enter')checkPw()">
+    <button onclick="checkPw()">验证</button>
+    <div class="pw-error" id="pwError">密码错误，请重试</div>
+  </div>
+</div>
+
 <div class="header">
 
   <div class="header-content">
@@ -238,7 +261,47 @@ body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);co
 
 <script>
 
+/* ── Password Protection ── */
+var PW_HASH = 'ea52b659f03ec6d7eb0bb715bf55ec924e6099fb'; /* SHA-1 of your password */
+var PROXY_BASE = 'https://gh.llkk.cc/'; /* GitHub download proxy (no VPN needed) */
 var R = 'willisfeng/douyin', RAW = 'https://raw.githubusercontent.com/'+R+'/main';
+
+function checkPw(){
+  var p = document.getElementById('pwInput').value.trim();
+  if(!p) return;
+  /* Simple hash: use SubtleCrypto SHA-256 → hex */
+  var enc = new TextEncoder().encode(p);
+  crypto.subtle.digest('SHA-1', enc).then(function(hash){
+    var hx = Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+    if(hx === PW_HASH){
+      document.getElementById('pwGate').classList.add('hidden');
+      sessionStorage.setItem('_pw_ok', '1');
+    } else {
+      document.getElementById('pwError').style.display = 'block';
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwInput').focus();
+    }
+  });
+}
+
+/* Check if already authenticated this session */
+if(sessionStorage.getItem('_pw_ok') === '1'){
+  document.getElementById('pwGate').classList.add('hidden');
+}
+
+/* ── Download Proxy Helper ── */
+/* Rewrite GitHub download URLs through proxy for mainland China access */
+function proxyUrl(u){
+  if(!u) return u;
+  /* Proxy GitHub release asset URLs and raw.githubusercontent.com */
+  if(u.indexOf('github.com/') >= 0 && (u.indexOf('/releases/download/') >= 0 || u.indexOf('/releases/assets/') >= 0)){
+    return PROXY_BASE + u;
+  }
+  if(u.indexOf('raw.githubusercontent.com/') >= 0){
+    return PROXY_BASE + u;
+  }
+  return u;
+}
 
 var as = [], rm = [], pk = [];
 
@@ -461,7 +524,7 @@ function od(an,pi){
 
       h+='<div class="fitem"><div class="fi"><div class="fn">'+eh(a.n)+'</div><div class="fm">'+fs(a.z)+'</div></div>';
 
-      h+='<div class="fa"><a href="'+eh(a.u)+'" target="_blank">&#x2B07;</a></div></div>';
+      h+='<div class="fa"><a href="'+eh(proxyUrl(a.u))+'" target="_blank">&#x2B07;</a></div></div>';
 
     });
 
