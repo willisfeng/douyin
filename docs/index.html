@@ -315,7 +315,7 @@ function triggerWorkflow(workflowFile, inputs){
   if(!ghToken){ setGhToken(); if(!ghToken) return; }
   var apiPath = '/actions/workflows/' + workflowFile + '/dispatches';
   var body = JSON.stringify({ref:'main', inputs:inputs});
-  var headers = {'Authorization':'Bearer '+ghToken,'Content-Type':'application/json'};
+  var headers = {'Authorization':'token '+ghToken,'Content-Type':'application/json','Accept':'application/vnd.github+json'};
 
   function doFetch(url){
     return fetch(url, {method:'POST', headers:headers, body:body});
@@ -702,23 +702,40 @@ function ud(){
 
 }
 
+/* ── Direct rooms.txt edit via Contents API ── */
+function editRoomsTxt(cb){
+  if(!ghToken){ setGhToken(); if(!ghToken) return; }
+  var url = GH_API + '/contents/rooms.txt';
+  var headers = {'Authorization':'token '+ghToken,'Accept':'application/vnd.github+json'};
+  fetch(url, {headers:headers}).then(function(r){ return r.json(); }).then(function(d){
+    var content = atob(d.content.replace(/\s/g,''));
+    var sha = d.sha;
+    var updated = cb(content);
+    if(updated === null){ st('房间已存在/不存在'); return; }
+    var body = JSON.stringify({
+      message: 'update rooms.txt',
+      content: btoa(unescape(encodeURIComponent(updated))),
+      sha: sha
+    });
+    fetch(url, {method:'PUT', headers:Object.assign({'Content-Type':'application/json'},headers), body:body})
+    .then(function(r2){
+      if(r2.ok){ st('已保存到服务器，稍后生效'); }
+      else { r2.json().then(function(e){ st('保存失败: '+(e.message||r2.status)); }); }
+    }).catch(function(){ st('网络错误'); });
+  }).catch(function(){ st('读取 rooms.txt 失败'); });
+}
+
 function addRm(){
-
   var id=document.getElementById('ni').value.trim(),na=document.getElementById('nn').value.trim();
-
   if(!id)return;
-
-  // Add locally first (instant feedback)
   rm.push({id:id,name:na||id});
-  rrb();
-  bp();
-  rp();
-
+  rrb(); bp(); rp();
   document.getElementById('ni').value='';document.getElementById('nn').value='';
-
-  // Trigger GitHub Actions to add room to rooms.txt
   if(!ghToken){ st('已本地添加。点击 Token 按钮可同步到服务器'); return; }
-  triggerWorkflow('add_room.yml', {room_id:id, room_name:na||id});
+  editRoomsTxt(function(content){
+    if(content.indexOf(id+' = ')>=0 || content.indexOf(id+'=')>=0) return null;
+    return content.trim() + '\n' + id + ' = ' + (na||id) + '\n';
+  });
   st('已提交到服务器，稍后生效');
 }
 
@@ -726,11 +743,19 @@ function delRm(rid, i){
   var name = rm[i] ? (rm[i].name || rid) : rid;
   if(!confirm('删除房间 "'+name+'"？')) return;
   rm.splice(i,1);
-  rrb();
-  bp();
-  rp();
+  rrb(); bp(); rp();
   if(!ghToken){ st('已本地删除。点击 Token 按钮可同步到服务器'); return; }
-  triggerWorkflow('delete_room.yml', {room_id:rid});
+  editRoomsTxt(function(content){
+    var lines = content.split('\n'), found = false;
+    var filtered = lines.filter(function(l){
+      var t = l.trim();
+      if(!t) return false;
+      if(t.indexOf(rid+' = ')===0 || t.indexOf(rid+'=')===0){ found=true; return false; }
+      return true;
+    });
+    if(!found) return null;
+    return filtered.join('\n') + '\n';
+  });
   st('已提交删除，稍后生效');
 }
 
