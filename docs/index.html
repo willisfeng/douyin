@@ -296,7 +296,6 @@ function sha1(str){
 
 var PW_HASH = 'd723ac5d1829ce02bd59666c3b00d41a50274e13'; /* SHA-1 of 'dy123456' */
 var PROXY_BASE = 'https://gh.llkk.cc/'; /* GitHub download proxy (no VPN needed) */
-var API_PROXY = 'https://gh.llkk.cc/'; /* GitHub API proxy (no VPN needed) */
 var R = 'willisfeng/douyin', RAW = 'https://raw.githubusercontent.com/'+R+'/main';
 var GH_API = 'https://api.github.com/repos/'+R;
 
@@ -314,16 +313,36 @@ function setGhToken(){
 
 function triggerWorkflow(workflowFile, inputs){
   if(!ghToken){ setGhToken(); if(!ghToken) return; }
-  var url = API_PROXY + GH_API + '/actions/workflows/' + workflowFile + '/dispatches';
+  var apiPath = '/actions/workflows/' + workflowFile + '/dispatches';
   var body = JSON.stringify({ref:'main', inputs:inputs});
-  fetch(url, {method:'POST', headers:{'Authorization':'Bearer '+ghToken,'Content-Type':'application/json'}, body:body})
+  var headers = {'Authorization':'Bearer '+ghToken,'Content-Type':'application/json'};
+
+  /* Try direct api.github.com first (usually accessible in China without VPN) */
+  fetch(GH_API + apiPath, {method:'POST', headers:headers, body:body})
   .then(function(r){
     if(r.ok || r.status===204){
       st('已触发，稍后刷新查看');
     } else {
       r.json().then(function(d){ st('失败: '+(d.message||r.status)); });
     }
-  }).catch(function(e){ st('网络错误: '+e.message); });
+  }).catch(function(e){
+    /* Direct failed, try CORS proxy */
+    var corsProxies = [
+      'https://corsproxy.io/?',
+      'https://api.allorigins.win/raw?url=',
+      'https://cors-anywhere.herokuapp.com/'
+    ];
+    function tryProxy(idx){
+      if(idx >= corsProxies.length){ st('网络错误: 所有代理均不可用，请使用 VPN 后重试'); return; }
+      var proxyUrl = corsProxies[idx] + encodeURIComponent(GH_API + apiPath);
+      fetch(proxyUrl, {method:'POST', headers:headers, body:body})
+      .then(function(r2){
+        if(r2.ok || r2.status===204){ st('已触发，稍后刷新查看'); }
+        else { r2.text().then(function(t){ st('失败: '+r2.status+' '+t.slice(0,100)); }); }
+      }).catch(function(){ tryProxy(idx+1); });
+    }
+    tryProxy(0);
+  });
 }
 
 function checkPw(){
