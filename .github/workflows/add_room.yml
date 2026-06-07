@@ -39,4 +39,4 @@ jobs:
           git config user.email "room-bot@github.com"
           git add rooms.txt
           git diff --cached --quiet || git commit -m "add room ${{ github.event.inputs.room_id }}"
-          git push
+          for i in 1 2 3; do git pull --rebase && git push && break; done
