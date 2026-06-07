@@ -24,6 +24,8 @@ jobs:
           RNAME: ${{ github.event.inputs.room_name }}
         run: |
           if [ -z "$RNAME" ]; then RNAME="$RID"; fi
+          # Ensure rooms.txt ends with a newline before appending
+          [ -s rooms.txt ] && [ "$(tail -c1 rooms.txt)" != "" ] && echo "" >> rooms.txt
           if grep -q "^$RID = " rooms.txt; then
             sed -i "s|^$RID = .*|$RID = $RNAME|" rooms.txt
             echo "Updated: $RID = $RNAME"
