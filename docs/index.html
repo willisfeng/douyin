@@ -317,29 +317,32 @@ function triggerWorkflow(workflowFile, inputs){
   var body = JSON.stringify({ref:'main', inputs:inputs});
   var headers = {'Authorization':'Bearer '+ghToken,'Content-Type':'application/json'};
 
-  /* Try direct api.github.com first (usually accessible in China without VPN) */
-  fetch(GH_API + apiPath, {method:'POST', headers:headers, body:body})
-  .then(function(r){
-    if(r.ok || r.status===204){
-      st('已触发，稍后刷新查看');
-    } else {
-      r.json().then(function(d){ st('失败: '+(d.message||r.status)); });
-    }
-  }).catch(function(e){
-    /* Direct failed, try CORS proxy */
+  function doFetch(url){
+    return fetch(url, {method:'POST', headers:headers, body:body});
+  }
+
+  function handle(r){
+    if(r.ok || r.status===204){ st('已触发，稍后刷新查看'); return; }
+    r.json().then(function(d){
+      var msg = d.message || ('HTTP '+r.status);
+      if(r.status===401){ st('Token 无效，请重新设置'); ghToken=''; localStorage.removeItem('_gh_token'); }
+      else if(r.status===403){ st('Token 权限不足，需要 workflow 权限'); }
+      else if(r.status===404){ st('Workflow 文件不存在: '+workflowFile); }
+      else { st('失败('+r.status+'): '+msg); }
+    }).catch(function(){ st('失败: HTTP '+r.status); });
+  }
+
+  /* Try direct api.github.com first */
+  doFetch(GH_API + apiPath).then(handle).catch(function(e){
+    /* Fallback to CORS proxies */
     var corsProxies = [
       'https://corsproxy.io/?',
-      'https://api.allorigins.win/raw?url=',
-      'https://cors-anywhere.herokuapp.com/'
+      'https://api.allorigins.win/raw?url='
     ];
     function tryProxy(idx){
-      if(idx >= corsProxies.length){ st('网络错误: 所有代理均不可用，请使用 VPN 后重试'); return; }
+      if(idx >= corsProxies.length){ st('网络错误，请使用 VPN 后重试'); return; }
       var proxyUrl = corsProxies[idx] + encodeURIComponent(GH_API + apiPath);
-      fetch(proxyUrl, {method:'POST', headers:headers, body:body})
-      .then(function(r2){
-        if(r2.ok || r2.status===204){ st('已触发，稍后刷新查看'); }
-        else { r2.text().then(function(t){ st('失败: '+r2.status+' '+t.slice(0,100)); }); }
-      }).catch(function(){ tryProxy(idx+1); });
+      doFetch(proxyUrl).then(handle).catch(function(){ tryProxy(idx+1); });
     }
     tryProxy(0);
   });
