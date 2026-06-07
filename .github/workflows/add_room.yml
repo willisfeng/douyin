@@ -24,8 +24,6 @@ jobs:
           RNAME: ${{ github.event.inputs.room_name }}
         run: |
           if [ -z "$RNAME" ]; then RNAME="$RID"; fi
-          # Ensure rooms.txt ends with a newline before appending
-          [ -s rooms.txt ] && [ "$(tail -c1 rooms.txt)" != "" ] && echo "" >> rooms.txt
           if grep -q "^$RID = " rooms.txt; then
             sed -i "s|^$RID = .*|$RID = $RNAME|" rooms.txt
             echo "Updated: $RID = $RNAME"
@@ -33,6 +31,8 @@ jobs:
             echo "$RID = $RNAME" >> rooms.txt
             echo "Added: $RID = $RNAME"
           fi
+          # Remove blank lines and ensure trailing newline
+          sed -i '/^$/d' rooms.txt
       - name: Commit
         run: |
           git config user.name "room-bot"

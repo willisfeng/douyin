@@ -25,6 +25,8 @@ jobs:
           else
             echo "Room $RID not found in rooms.txt"
           fi
+          # Remove blank lines
+          sed -i '/^$/d' rooms.txt
       - name: Commit
         run: |
           git config user.name "room-bot"
