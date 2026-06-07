@@ -296,6 +296,7 @@ function sha1(str){
 
 var PW_HASH = 'd723ac5d1829ce02bd59666c3b00d41a50274e13'; /* SHA-1 of 'dy123456' */
 var PROXY_BASE = 'https://gh.llkk.cc/'; /* GitHub download proxy (no VPN needed) */
+var API_PROXY = 'https://gh.llkk.cc/'; /* GitHub API proxy (no VPN needed) */
 var R = 'willisfeng/douyin', RAW = 'https://raw.githubusercontent.com/'+R+'/main';
 var GH_API = 'https://api.github.com/repos/'+R;
 
@@ -313,7 +314,7 @@ function setGhToken(){
 
 function triggerWorkflow(workflowFile, inputs){
   if(!ghToken){ setGhToken(); if(!ghToken) return; }
-  var url = GH_API + '/actions/workflows/' + workflowFile + '/dispatches';
+  var url = API_PROXY + GH_API + '/actions/workflows/' + workflowFile + '/dispatches';
   var body = JSON.stringify({ref:'main', inputs:inputs});
   fetch(url, {method:'POST', headers:{'Authorization':'Bearer '+ghToken,'Content-Type':'application/json'}, body:body})
   .then(function(r){
