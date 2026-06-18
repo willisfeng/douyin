@@ -35,9 +35,9 @@
     "checked_at": 1781822116
   },
   "621645834257": {
-    "live": false,
-    "recording": false,
-    "start_ts": null,
+    "live": true,
+    "recording": true,
+    "start_ts": 1781822116,
     "name": "夏老师在越南",
     "checked_at": 1781822116
   },
