@@ -1,7 +1,7 @@
 name: 抖音直播24小时监控
 
 on:
-  #workflow_dispatch:
+  workflow_dispatch:
   schedule:
     - cron: 0 */5 * * *
 
@@ -56,6 +56,7 @@ jobs:
         run: |
           echo 'GitHub UTC: ' $(date -u '+%Y-%m-%d %H:%M:%S')
           echo 'Thailand:  ' $(TZ='Asia/Bangkok' date '+%Y-%m-%d %H:%M:%S')
+          echo 'Shanghai:  ' $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')
       - name: Set locale
         run: |
           sudo locale-gen en_US.UTF-8 || true
