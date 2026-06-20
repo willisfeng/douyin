@@ -1,0 +1,36 @@
+name: Test Record + Viewer Count (5min)
+on: [workflow_dispatch]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install tools
+        run: |-
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install playwright
+          python -m playwright install chromium --with-deps
+      - name: Record + Track Viewer Count
+        run: python record_test.py
+        env:
+          ROOM_URL: https://live.douyin.com/168465302284
+          DURATION_MIN: '1'
+      - name: Upload recording
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-recording
+          path: |
+            *.flv
+            page_data.json
+            *.ass
+          retention-days: 7

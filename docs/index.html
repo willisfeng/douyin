@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!-- v3: douyin-style UI, GitHub Actions room mgmt, CORS proxy fallback -->
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>抖音录制文件浏览器</title>
+
+<style>
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --dy-black:#010101;
+  --dy-dark:#121212;
+  --dy-surface:#1a1a1a;
+  --dy-surface2:#222;
+  --dy-surface3:#2a2a2a;
+  --dy-border:#333;
+  --dy-text:#fff;
+  --dy-text2:#aaa;
+  --dy-text3:#666;
+  --dy-pink:#fe2c55;
+  --dy-cyan:#20d5ec;
+  --dy-pink2:#ff0050;
+  --dy-cyan2:#00f2fe;
+  --radius:12px;
+  --radius-sm:8px;
+}
+
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--dy-black);color:var(--dy-text);min-height:100vh;overflow-x:hidden}
+
+/* ── Password Gate ── */
+.pw-gate{display:flex;position:fixed;inset:0;background:var(--dy-black);z-index:9999;justify-content:center;align-items:center;flex-direction:column;gap:24px}
+.pw-gate::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(254,44,85,.15) 0%,transparent 60%),radial-gradient(ellipse at 80% 70%,rgba(32,213,236,.1) 0%,transparent 60%);pointer-events:none}
+.pw-gate.hidden{display:none}
+.pw-gate .pw-card{position:relative;z-index:1;background:var(--dy-dark);border:1px solid var(--dy-border);border-radius:16px;padding:48px 40px;width:90%;max-width:380px;text-align:center}
+.pw-gate .pw-logo{font-size:48px;margin-bottom:8px}
+.pw-gate h2{font-size:22px;font-weight:800;color:var(--dy-text);margin-bottom:6px;letter-spacing:1px}
+.pw-gate p{color:var(--dy-text2);font-size:13px;margin-bottom:24px}
+.pw-gate input{width:100%;padding:14px 16px;border-radius:8px;border:1px solid var(--dy-border);background:var(--dy-surface);color:var(--dy-text);font-size:16px;outline:none;text-align:center;font-family:inherit;letter-spacing:4px;transition:border-color .2s}
+.pw-gate input:focus{border-color:var(--dy-pink)}
+.pw-gate button{width:100%;padding:14px;border-radius:8px;background:linear-gradient(135deg,var(--dy-pink),var(--dy-pink2));border:none;color:#fff;font-size:16px;cursor:pointer;font-family:inherit;font-weight:700;margin-top:12px;letter-spacing:2px;transition:opacity .2s}
+.pw-gate button:hover{opacity:.9}
+.pw-gate .pw-error{color:var(--dy-pink);font-size:13px;margin-top:10px;display:none}
+
+/* ── Top Nav ── */
+.top-nav{position:sticky;top:0;z-index:100;background:rgba(1,1,1,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;padding:0 16px;height:56px}
+.nav-brand{font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--dy-pink),var(--dy-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1px}
+.nav-brand .note{font-size:16px}
+
+.container{max-width:1100px;margin:0 auto;padding:20px 16px}
+
+/* ── Hero ── */
+.hero{text-align:center;padding:32px 16px 20px;position:relative}
+.hero::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(254,44,85,.08) 0%,transparent 70%);pointer-events:none}
+.hero h1{font-size:30px;font-weight:900;position:relative;z-index:1;letter-spacing:1px}
+.hero h1 .h1-1{color:var(--dy-text)}
+.hero h1 .h1-2{background:linear-gradient(135deg,var(--dy-pink),var(--dy-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero .subtitle{color:var(--dy-text2);font-size:14px;margin-top:8px;position:relative;z-index:1}
+
+.stats-bar{display:flex;gap:32px;margin-top:24px;flex-wrap:wrap;justify-content:center;position:relative;z-index:1}
+.stat-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+.stat-item .num{font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--dy-pink),var(--dy-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-item .label{font-size:12px;color:var(--dy-text2);letter-spacing:1px}
+
+/* ── Tabs ── */
+.tab-bar{display:flex;gap:0;max-width:1100px;margin:0 auto;padding:0 16px 16px;justify-content:center}
+.tab-btn{position:relative;padding:10px 28px;border:none;background:none;color:var(--dy-text3);font-size:15px;cursor:pointer;font-family:inherit;font-weight:600;letter-spacing:1px;transition:color .3s}
+.tab-btn::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:3px;background:var(--dy-pink);border-radius:2px;transition:width .3s}
+.tab-btn:hover{color:var(--dy-text2)}
+.tab-btn.active{color:var(--dy-text)}
+.tab-btn.active::after{width:70%}
+
+/* ── Filters ── */
+.filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{background:var(--dy-surface);border:1px solid var(--dy-border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--dy-text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+.filters input:focus,.filters select:focus{border-color:var(--dy-pink)}
+.filters .search-wrap{position:relative;flex:1;min-width:200px}
+.filters .search-wrap input{width:100%;padding-left:38px;background:var(--dy-surface2)}
+.filters .search-wrap span{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--dy-text3);font-size:14px}
+
+/* ── Cards Grid ── */
+.packages-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+
+.pkg-card{background:var(--dy-surface);border:1px solid var(--dy-border);border-radius:var(--radius);padding:18px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.pkg-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(254,44,85,.03));pointer-events:none}
+.pkg-card:hover{border-color:var(--dy-pink);transform:translateY(-2px);box-shadow:0 8px 32px rgba(254,44,85,.1)}
+.pkg-card:active{transform:scale(.98)}
+.pkg-card .anchor-name{font-size:16px;font-weight:700;color:var(--dy-text);display:flex;align-items:center;gap:6px}
+.pkg-card .anchor-name .live-link{font-size:11px;color:var(--dy-cyan);text-decoration:none;padding:2px 8px;border-radius:4px;border:1px solid rgba(32,213,236,.3);white-space:nowrap}
+.pkg-card .anchor-name .live-link:hover{background:rgba(32,213,236,.1)}
+.pkg-card .time-range{font-size:13px;color:var(--dy-text2);margin:10px 0}
+.pkg-card .file-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;background:var(--dy-surface2);color:var(--dy-text2);margin:2px 4px 2px 0;border:1px solid var(--dy-border)}
+.pkg-card .file-badge.v{color:var(--dy-pink);border-color:rgba(254,44,85,.2)}
+.pkg-card .file-badge.a{color:var(--dy-cyan);border-color:rgba(32,213,236,.2)}
+
+.date-divider{grid-column:1/-1;font-size:16px;font-weight:800;color:var(--dy-cyan);margin:24px 0 8px;padding:8px 14px;background:linear-gradient(135deg,rgba(32,213,236,.08),transparent);border-radius:8px;border-left:3px solid var(--dy-cyan);letter-spacing:1px}
+
+.loading,.empty-state{text-align:center;padding:80px 20px;color:var(--dy-text3)}
+.loading p,.empty-state p{font-size:14px;margin-top:12px}
+.spinner{width:36px;height:36px;border:2px solid var(--dy-surface2);border-top-color:var(--dy-pink);border-radius:50%;animation:s1 .6s linear infinite;margin:0 auto}
+@keyframes s1{to{transform:rotate(360deg)}}
+
+/* ── Footer ── */
+.footer{text-align:center;padding:32px 16px;color:var(--dy-text3);font-size:12px;border-top:1px solid var(--dy-border);margin-top:40px;letter-spacing:1px}
+
+/* ── Modal ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:3000;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
+.overlay.show{display:flex}
+.modal{background:var(--dy-dark);border:1px solid var(--dy-border);border-radius:16px;width:92%;max-width:800px;max-height:85vh;overflow:auto;box-shadow:0 32px 80px rgba(0,0,0,.8)}
+.modal-top{position:sticky;top:0;background:var(--dy-dark);border-bottom:1px solid var(--dy-border);padding:16px 20px;display:flex;align-items:center;gap:12px;z-index:10}
+.modal-top .mtitle{flex:1;font-weight:700;font-size:16px}
+.modal-top button{background:none;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;color:var(--dy-text2);font-size:14px;transition:all .2s}
+.modal-top button:hover{color:var(--dy-text);background:var(--dy-surface2)}
+.modal-body{padding:20px}
+
+.fgroup{margin-bottom:18px}
+.fgroup h3{font-size:12px;color:var(--dy-text3);margin-bottom:10px;letter-spacing:2px;text-transform:uppercase}
+.fitem{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--dy-surface);border:1px solid var(--dy-border);border-radius:var(--radius-sm);margin-bottom:6px;transition:all .2s}
+.fitem:hover{background:var(--dy-surface2);border-color:var(--dy-pink)}
+.fitem .fi{flex:1;min-width:0}
+.fitem .fn{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fitem .fm{font-size:11px;color:var(--dy-text2);margin-top:3px}
+.fitem .fa{display:flex;gap:6px}
+.fitem .fa a,.fitem .fa button{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--dy-pink),var(--dy-pink2));border:none;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:700;transition:opacity .2s}
+.fitem .fa a:hover,.fitem .fa button:hover{opacity:.85}
+
+/* ── Room Manager ── */
+.room-mgr{max-width:1100px;margin:0 auto;padding:0 16px;display:none}
+.room-mgr.show{display:block}
+
+.room-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.room-actions input{background:var(--dy-surface);border:1px solid var(--dy-border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--dy-text);font-size:14px;outline:none;font-family:inherit;min-width:140px;flex:1;transition:border-color .2s}
+.room-actions input:focus{border-color:var(--dy-pink)}
+.room-actions button{background:linear-gradient(135deg,var(--dy-pink),var(--dy-pink2));border:none;border-radius:var(--radius-sm);padding:10px 22px;color:#fff;font-size:14px;cursor:pointer;font-family:inherit;font-weight:700;letter-spacing:1px;transition:opacity .2s}
+.room-actions button:hover{opacity:.9}
+.room-actions button.sec{background:var(--dy-surface2);border:1px solid var(--dy-border);color:var(--dy-text);font-weight:500}
+
+.live-dot{font-size:16px;margin-right:4px}
+.live-dot.live{animation:pulse 2s infinite}
+@keyframes pulse{0%{opacity:1}50%{opacity:.3}100%{opacity:1}}
+
+.room-tb{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
+.room-tb th{padding:12px;border-bottom:2px solid var(--dy-border);color:var(--dy-text3);font-size:12px;text-align:left;text-transform:uppercase;letter-spacing:1px}
+.room-tb td{padding:12px;border-bottom:1px solid var(--dy-border);vertical-align:middle}
+.room-tb tr:hover td{background:var(--dy-surface)}
+.room-rid{font-size:12px;color:var(--dy-cyan)}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dy-cyan);color:#000;padding:12px 24px;border-radius:24px;z-index:2000;opacity:0;transition:opacity .3s;pointer-events:none;font-weight:600;font-size:14px}
+.toast.show{opacity:1}
+
+@media(max-width:640px){
+  .hero h1{font-size:24px}
+  .packages-grid{grid-template-columns:1fr}
+  .filters{flex-direction:column}
+  .filters .search-wrap{min-width:100%}
+  .stats-bar{gap:24px}
+  .stat-item .num{font-size:22px}
+}
+
+.dur{display:inline-block;margin-top:6px;font-size:12px;color:var(--dy-cyan);background:rgba(32,213,236,.1);padding:2px 10px;border-radius:12px;font-weight:600}
+
+/* ── Floating note icon ── */
+.music-notes{position:fixed;pointer-events:none;z-index:0;opacity:.03;font-size:80px}
+.n1{top:10%;left:5%;animation:float1 8s ease-in-out infinite}
+.n2{top:60%;right:8%;animation:float2 10s ease-in-out infinite}
+.n3{top:30%;right:20%;animation:float3 7s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-20px) rotate(10deg)}}
+@keyframes float2{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-30px) rotate(-8deg)}}
+@keyframes float3{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-15px) rotate(5deg)}}
+</style>
+
+</head>
+
+<body>
+
+<!-- ── Floating music notes (Douyin vibe) ── -->
+<div class="music-notes n1">🎵</div>
+<div class="music-notes n2">🎶</div>
+<div class="music-notes n3">♪</div>
+
+<!-- ── Password Gate ── -->
+<div class="pw-gate" id="pwGate">
+  <div class="pw-card">
+    <div class="pw-logo">🎵</div>
+    <h2>抖音录制文件</h2>
+    <p>请输入密码以继续访问</p>
+    <input type="password" id="pwInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')checkPw()">
+    <button onclick="checkPw()">进 入</button>
+    <div class="pw-error" id="pwError">密码错误，请重试</div>
+  </div>
+</div>
+
+<!-- ── Top Nav ── -->
+<div class="top-nav">
+  <div class="nav-brand"><span class="note">♪</span> 抖音录制</div>
+</div>
+
+<div class="hero">
+  <h1><span class="h1-1">直播录制</span> <span class="h1-2">文件浏览器</span></h1>
+  <div class="subtitle">直播间录制 · 音频 · 转录文字 · 弹幕字幕</div>
+  <div class="stats-bar">
+    <div class="stat-item"><span class="num" id="sp">-</span><span class="label">录制包</span></div>
+    <div class="stat-item"><span class="num" id="sf">-</span><span class="label">文件</span></div>
+    <div class="stat-item"><span class="num" id="sa">-</span><span class="label">主播</span></div>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="tb1" onclick="sw('browse')">浏览</button>
+  <button class="tab-btn" id="tb2" onclick="sw('rooms')">房间</button>
+</div>
+
+<div id="bp" class="container">
+
+  <div class="filters">
+
+    <div class="search-wrap"><span>&#x1F50D;</span><input id="si" placeholder="&#x641C;&#x7D22;..." oninput="rp()"></div>
+
+    <select id="af" onchange="rp()"><option value="all">&#x5168;&#x90E8;</option></select>
+
+    <select id="df" onchange="rp()"><option value="all">&#x5168;&#x90E8;&#x65E5;&#x671F;</option></select>
+
+  </div>
+
+  <div id="ct"><div class="loading"><div class="spinner"></div><p>&#x52A0;&#x8F7D;&#x4E2D;...</p></div></div>
+
+</div>
+
+<div id="rm" class="room-mgr">
+
+  <div class="room-actions">
+
+    <input id="ni" placeholder="&#x623F;&#x95F4; ID" style="flex:0 0 180px">
+
+    <input id="nn" placeholder="&#x4E3B;&#x64AD;&#x6635;&#x79F0;">
+
+    <button onclick="addRm()">+ 添加</button>
+    <button class="sec" onclick="setGhToken()">🔑 Token</button>
+    <button class="sec" onclick="lo();setTimeout(function(){rrb()},500)">↻ 刷新</button>
+
+  </div>
+
+  <table class="room-tb" id="rt"><thead><tr><th>#</th><th>&#x623F;&#x95F4; ID</th><th>&#x4E3B;&#x64AD;</th><th>&#x72B6;&#x6001;</th><th>&#x65F6;&#x957F;</th><th></th></tr></thead><tbody id="rb"></tbody></table>
+
+  <div style="margin-top:16px"><span id="rs" style="margin-left:12px;color:var(--text-dim);font-size:13px"></span></div>
+
+</div>
+
+<div class="footer">douyin-recorder</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="dm">
+
+  <div class="modal">
+
+    <div class="modal-top"><div class="mtitle" id="dt"></div><button onclick="cls('dm')">&#x2715;</button></div>
+
+    <div class="modal-body" id="db"></div>
+
+  </div>
+
+</div>
+
+<script>
+
+/* ── Pure JS SHA-1 (works everywhere, no crypto.subtle needed) ── */
+function sha1(str){
+  function R(n,b){return(n<<b)|(n>>>(32-b))}
+  var i,j,t,l=str.length*8,a=((l+64>>9)<<4)+15,o=Array(a),w=Array(80);
+  for(i=0;i<l;i+=8) o[i>>5]|=(str.charCodeAt(i/8)&255)<<(24-i%32);
+  o[i>>5]|=128<<(24-i%32); o[a-1]=l;
+  var h0=1732584193,h1=4023233417,h2=2562383102,h3=271733878,h4=3285377520;
+  for(i=0;i<a;i+=16){
+    for(j=0;j<16;j++) w[j]=o[i+j];
+    for(j=16;j<80;j++) w[j]=R(w[j-3]^w[j-8]^w[j-14]^w[j-16],1);
+    var a0=h0,b=h1,c=h2,d=h3,e=h4;
+    for(j=0;j<80;j++){
+      if(j<20){t=(R(a0,5)+(b&c|~b&d)+e+w[j]+1518500249)|0}
+      else if(j<40){t=(R(a0,5)+(b^c^d)+e+w[j]+1859775393)|0}
+      else if(j<60){t=(R(a0,5)+(b&c|b&d|c&d)+e+w[j]+2400959708)|0}
+      else{t=(R(a0,5)+(b^c^d)+e+w[j]+3395469782)|0}
+      e=d;d=c;c=R(b,30);b=a0;a0=t;
+    }
+    h0=(h0+a0)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0;
+  }
+  function X(n){return((n>>>0).toString(16)).slice(-8)}
+  return X(h0)+X(h1)+X(h2)+X(h3)+X(h4);
+}
+
+var PW_HASH = 'd723ac5d1829ce02bd59666c3b00d41a50274e13'; /* SHA-1 of 'dy123456' */
+var PROXY_BASE = 'https://gh.llkk.cc/'; /* GitHub download proxy (no VPN needed) */
+var R = 'willisfeng/douyin', RAW = 'https://raw.githubusercontent.com/'+R+'/main';
+var GH_API = 'https://api.github.com/repos/'+R;
+
+/* ── GitHub Actions trigger helpers ── */
+var ghToken = localStorage.getItem('_gh_token') || '';
+
+function setGhToken(){
+  var t = prompt('请输入 Personal Access Token\n（需要 workflow 权限）');
+  if(t){
+    ghToken = t;
+    localStorage.setItem('_gh_token', t);
+    st('Token 已保存');
+  }
+}
+
+function triggerWorkflow(workflowFile, inputs){
+  if(!ghToken){ setGhToken(); if(!ghToken) return; }
+  var apiPath = '/actions/workflows/' + workflowFile + '/dispatches';
+  var body = JSON.stringify({ref:'main', inputs:inputs});
+  var headers = {'Authorization':'token '+ghToken,'Content-Type':'application/json','Accept':'application/vnd.github+json'};
+
+  function doFetch(url){
+    return fetch(url, {method:'POST', headers:headers, body:body});
+  }
+
+  function handle(r){
+    if(r.ok || r.status===204){ st('已触发，稍后刷新查看'); return; }
+    r.json().then(function(d){
+      var msg = d.message || ('HTTP '+r.status);
+      if(r.status===401){ st('Token 无效，请重新设置'); ghToken=''; localStorage.removeItem('_gh_token'); }
+      else if(r.status===403){ st('Token 权限不足，需要 workflow 权限'); }
+      else if(r.status===404){ st('Workflow 文件不存在: '+workflowFile); }
+      else { st('失败('+r.status+'): '+msg); }
+    }).catch(function(){ st('失败: HTTP '+r.status); });
+  }
+
+  /* Try direct api.github.com first */
+  doFetch(GH_API + apiPath).then(handle).catch(function(e){
+    /* Fallback to CORS proxies */
+    var corsProxies = [
+      'https://corsproxy.io/?',
+      'https://api.allorigins.win/raw?url='
+    ];
+    function tryProxy(idx){
+      if(idx >= corsProxies.length){ st('网络错误，请使用 VPN 后重试'); return; }
+      var proxyUrl = corsProxies[idx] + encodeURIComponent(GH_API + apiPath);
+      doFetch(proxyUrl).then(handle).catch(function(){ tryProxy(idx+1); });
+    }
+    tryProxy(0);
+  });
+}
+
+function checkPw(){
+  var p = document.getElementById('pwInput').value.trim();
+  if(!p) return;
+  var hx = sha1(p);
+  if(hx === PW_HASH){
+    document.getElementById('pwGate').classList.add('hidden');
+    sessionStorage.setItem('_pw_ok', '1');
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+/* Check if already authenticated this session */
+if(sessionStorage.getItem('_pw_ok') === '1'){
+  document.getElementById('pwGate').classList.add('hidden');
+}
+
+/* ── Download Proxy Helper ── */
+/* Rewrite GitHub download URLs through proxy for mainland China access */
+function proxyUrl(u){
+  if(!u) return u;
+  /* Proxy GitHub release asset URLs and raw.githubusercontent.com */
+  if(u.indexOf('github.com/') >= 0 && (u.indexOf('/releases/download/') >= 0 || u.indexOf('/releases/assets/') >= 0)){
+    return PROXY_BASE + u;
+  }
+  if(u.indexOf('raw.githubusercontent.com/') >= 0){
+    return PROXY_BASE + u;
+  }
+  return u;
+}
+
+var as = [], rm = [], pk = [];
+
+function fs(b){if(!b)return '-';if(b<1048576)return(b/1024).toFixed(1)+'K';if(b<1073741824)return(b/1048576).toFixed(1)+'M';return(b/1073741824).toFixed(2)+'G'}
+
+function gi(t){return{v:'🎬',a:'🎵',t:'📄',s:'💬'}[t]||'📄'}
+
+function gl(t){return{v:'视频',a:'音频',t:'文字',s:'SRT'}[t]||''}
+
+function eh(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function fl(d){return new Date(d).toLocaleString([],{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
+
+function ts(d){return new Date(d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)+'T'+d.slice(9,11)+':'+d.slice(11,13)+':'+d.slice(13,15)+'Z')}
+
+function ft(s,e){var a=fl(ts(s));return e?a+' ~ '+fl(ts(e)):a}
+
+function gb(i){if(rm)for(var j=0;j<rm.length;j++)if(rm[j].id===i)return rm[j].name;return null}
+
+async function lo(){
+
+  try{
+
+    // Load pre-built index (0 API calls, no rate limit)
+    var idx=await fetch(RAW+'/docs/releases_index.json?_='+Date.now());
+    if(!idx.ok)throw new Error('HTTP '+idx.status);
+    var data=await idx.json();
+
+    rm=data.rooms||[];
+    as=data.assets||[];
+
+    // Load live status
+    ls={};
+    try{var lsr=await fetch(RAW+'/docs/live_status.json?_='+Date.now());if(lsr.ok)ls=await lsr.json()}catch(le){}
+
+    bp();rrb();ud();
+
+  }catch(e){document.getElementById('ct').innerHTML='<div class="empty-state"><p>Error: '+eh(e.message)+'</p></div>'}
+
+}
+
+function bp(){
+
+  var g={};
+
+  as.forEach(function(a){
+
+    // skip .log files (ffmpeg/audio logs)
+    if(a.n&&a.n.endsWith('.log'))return;
+
+    var ak='oth';
+
+    if(a.ri&&gb(a.ri))ak=gb(a.ri);
+
+    else if(a.an&&a.an!='oth'&&a.an!=a.ri)ak=a.an;
+
+    if(a.ri&&rm.some(function(r){return r.id==a.ri}))ak=a.an;
+
+    // Fallback: extract room_id from filename
+    // e.g. "215933010618_000.20260528_030014.ass" or "page_data_847349416634.20260528_083757.json"
+    if(ak==='oth'&&a.n){var fnid=a.n.match(/^(\d{9,})_/)||a.n.match(/^page_data_(\d{9,})\./);if(fnid){var fn=gb(fnid[1]);if(fn)ak=fn;}}
+
+    var pk=a.st?ak+'|'+(a.st||'')+'|'+(a.et||''):ak+'|'+a.c.slice(0,10);
+
+    // dk: use st date if available, otherwise fallback to c
+    var tdk=a.st?a.st.slice(0,4)+'-'+a.st.slice(4,6)+'-'+a.st.slice(6,8):a.c.slice(0,10);
+    if(!g[pk]){g[pk]={an:ak,ri:a.ri,st:a.st,et:a.et,it:[],dk:tdk};}
+    else if(tdk!==g[pk].dk&&a.st){
+      // If st-based date differs from existing, prefer the st-based one
+      g[pk].dk=tdk;
+    }
+
+    g[pk].it.push(a);
+
+  });
+
+  pk=Object.values(g);
+
+  // merge same room+date packages (group by ri + dk)
+  var mg={};
+  pk.forEach(function(p){
+    var mk=(p.ri||'')+'|'+p.dk;
+    if(!mg[mk]){mg[mk]=p;}
+    else{
+      mg[mk].it=mg[mk].it.concat(p.it);
+      // keep earliest st and latest et
+      if(!mg[mk].st&&p.st)mg[mk].st=p.st;
+      else if(mg[mk].st&&p.st&&p.st<mg[mk].st)mg[mk].st=p.st;
+      if(!mg[mk].et&&p.et)mg[mk].et=p.et;
+      else if(p.et&&p.et>mg[mk].et)mg[mk].et=p.et;
+    }
+  });
+  pk=Object.values(mg);
+
+  pk.sort(function(a,b){
+
+    var da=a.st?a.st.slice(0,8):a.dk.replace(/-/g,''),db=b.st?b.st.slice(0,8):b.dk.replace(/-/g,'');
+
+    if(da!=db)return db.localeCompare(da);
+
+    return(b.st||'').localeCompare(a.st||'')||(a.an||'').localeCompare(b.an||'');
+
+  });
+
+  pf();rp();
+
+}
+
+function pf(){
+
+  var as2={};pk.forEach(function(p){as2[p.an]=true});
+
+  var sel=document.getElementById('af');sel.innerHTML='<option value="all">&#x5168;&#x90E8;</option>';
+
+  Object.keys(as2).sort(function(a,b){if(a==='oth')return 1;if(b==='oth')return-1;return a.localeCompare(b)}).forEach(function(a){var o=document.createElement('option');o.value=a;o.textContent=a==='oth'?'其他主播':a;sel.appendChild(o)});
+
+  var ds2={};pk.forEach(function(p){ds2[p.dk]=true});
+
+  var sel2=document.getElementById('df');sel2.innerHTML='<option value="all">&#x5168;&#x90E8;&#x65E5;&#x671F;</option>';
+
+  Object.keys(ds2).sort().reverse().forEach(function(d){var o=document.createElement('option');o.value=d;o.textContent=d.slice(5);sel2.appendChild(o)});
+
+  document.getElementById('sp').textContent=pk.length;
+
+  document.getElementById('sf').textContent=as.length;
+
+  document.getElementById('sa').textContent=rm.length;
+
+}
+
+function rp(){
+
+  var q=document.getElementById('si').value.toLowerCase(),af=document.getElementById('af').value,df=document.getElementById('df').value;
+
+  var f=pk.filter(function(p){
+
+    if(af!='all'&&p.an!=af)return false;
+
+    if(df!='all'&&p.dk!=df)return false;
+
+    if(q&&p.an.toLowerCase().indexOf(q)==-1&&(p.ri||'').indexOf(q)==-1)return false;
+
+    return true;
+
+  });
+
+  var el=document.getElementById('ct');
+
+  if(!f.length){el.innerHTML='<div class="empty-state"><p>&#x1F4ED; &#x6CA1;&#x6709;&#x5339;&#x914D;&#x7684;&#x5F55;&#x5236;&#x5305;</p></div>';return}
+
+  var h='<div class="packages-grid">',lastDate='';
+
+  f.forEach(function(p){var pd=p.dk;if(pd!=lastDate){h+='<div class="date-divider">📅 '+pd.slice(5)+'</div>';lastDate=pd;}
+
+    var ty={};
+
+    p.it.forEach(function(a){ty[a.ty]=(ty[a.ty]||0)+1});
+
+    h+='<div class="pkg-card" onclick="od(\''+p.an+'\','+pk.indexOf(p)+')">';
+
+    var dn=p.an;if(dn==='oth')dn='其他主播';h+='<div class="anchor-name">'+eh(dn)+(p.ri?' <a class="live-link" href="https://live.douyin.com/'+p.ri+'" target="_blank" onclick="event.stopPropagation()">🔗 '+p.ri+'</a>':'')+'</div>';
+
+    h+='<div class="time-range">'+(p.st?ft(p.st,p.et):(p.st?'':p.dk.slice(5)))+'</div>';if(p.st&&p.et){var ts=p.st.replace(/_/g,"").match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/),te=p.et.replace(/_/g,"").match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);if(ts&&te){var ds=new Date(te[1],te[2]-1,te[3],te[4],te[5],te[6])-new Date(ts[1],ts[2]-1,ts[3],ts[4],ts[5],ts[6]);ds=Math.floor(ds/1000);if(ds>0){var dh=Math.floor(ds/3600),dm=Math.floor((ds%3600)/60);h+='<div class="dur">'+(dh>0?dh+"h "+dm+"m":dm+"m")+'</div>';}}}else{h+='<div class="dur">--</div>';}h+='<div>';
+
+    for(var k in ty){h+='<span class="file-badge '+k+'">'+gi(k)+' '+ty[k]+'</span>';}
+
+    h+='</div></div>';
+
+  });
+
+  ;
+
+  el.innerHTML=h;
+
+  document.getElementById('sp').textContent=f.length+'/'+pk.length;
+
+}
+
+
+function pkPeakHtml(p){
+  var mi=p.it.find(function(a){return a.ty=="m"});
+  if(!mi)return "";
+  var el=document.createElement("span");
+  el.className="peak-load";
+  el.textContent="...";
+  fetch(mi.u).then(function(r){return r.json()}).then(function(d){
+    var pk=d.peak_viewers||0;
+    if(pk)el.innerHTML="\ud83d\udce1 "+pk.toLocaleString()+"\u5728\u7EBF";
+    else el.innerHTML="\ud83d\udce1 -";
+    el.className="peak-val";
+  }).catch(function(){el.remove()});
+  return el.outerHTML;
+}
+
+function od(an,pi){
+
+  var p=null;
+
+  if(pi!==undefined&&pi<pk.length&&pk[pi]&&pk[pi].an===an){p=pk[pi];}
+
+  else{for(var i=0;i<pk.length;i++)if(pk[i].an==an){p=pk[i];break;}}
+
+  if(!p)return;
+
+  document.getElementById('dt').textContent=p.an+' 的录制包';
+
+  var gr={v:[],a:[],t:[],s:[]};
+
+  p.it.forEach(function(a){if(gr[a.ty])gr[a.ty].push(a);else gr.t.push(a)});
+
+  var h='<div style="margin-bottom:16px;font-weight:600">'+(p.st?ft(p.st,p.et):(p.st?'':p.dk.slice(5)))+'</div>';
+
+  ['v','a','t','s'].forEach(function(t){
+
+    if(!gr[t].length)return;
+
+    h+='<div class="fgroup"><h3>'+gi(t)+' '+gl(t)+' ('+gr[t].length+')</h3>';
+
+    gr[t].forEach(function(a){
+
+      h+='<div class="fitem"><div class="fi"><div class="fn">'+eh(a.n)+'</div><div class="fm">'+fs(a.z)+'</div></div>';
+
+      h+='<div class="fa"><a href="'+eh(proxyUrl(a.u))+'" target="_blank">&#x2B07;</a></div></div>';
+
+    });
+
+    ;
+
+  });
+
+  document.getElementById('db').innerHTML=h;
+
+  document.getElementById('dm').classList.add('show');
+
+}
+
+function cls(id){document.getElementById(id).classList.remove('show')}
+
+function st(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2000)}
+
+function sw(t){
+
+  document.getElementById('tb1').className='tab-btn'+(t=='browse'?' active':'');
+
+  document.getElementById('tb2').className='tab-btn'+(t=='rooms'?' active':'');
+
+  document.getElementById('bp').style.display=t=='browse'?'block':'none';
+
+  document.getElementById('rm').className='room-mgr'+(t=='rooms'?' show':'');
+
+  if(t=='rooms'){rrb();ud()}
+
+}
+
+function rrb(){
+
+  var h='';
+
+  var now=Math.floor(Date.now()/1000);
+
+  rm.forEach(function(r,i){
+
+    var st=ls&&ls[r.id];
+
+    var dot='\u26AA',sl='',dur='-';
+
+    if(st){
+
+      if(st.live&&st.recording){dot='\ud83d\udfe2';sl='live';var secs=now-st.start_ts;if(secs>0){var m=Math.floor(secs/60);var s=secs%60;dur=m+':'+(s<10?'0':'')+s}}else if(st.live&&!st.recording){dot='\ud83d\udfe2';sl='live';dur='已下播'}else{dot='\ud83d\udd34';sl='off';dur='已下播'}
+
+    }
+
+    h+='<tr><td>'+(i+1)+'</td>';
+
+    h+='<td class="room-rid"><a href="https://live.douyin.com/'+r.id+'" target="_blank" style="color:var(--accent3);text-decoration:none">'+eh(r.id)+'</a></td>';
+
+    h+='<td><input class="room-rid" style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text)" value="'+eh(r.name)+'" oninput="rm['+i+'].name=this.value"></td>';
+
+    h+='<td><span class="live-dot '+sl+'">'+dot+'</span></td>';
+
+    h+='<td style="font-size:12px;color:var(--text-dim);font-variant-numeric:tabular-nums" id="dur_'+r.id+'">'+dur+'</td>';
+
+    h+='<td><button onclick="delRm(\''+r.id+'\','+i+')" style="background:none;border:1px solid rgba(254,44,85,.3);border-radius:4px;color:var(--dy-pink);cursor:pointer;padding:4px 10px;font-size:13px">✕</button></td></tr>';
+
+  });
+
+  document.getElementById('rb').innerHTML=h;
+
+}
+
+function ud(){
+
+  if(window._lup)clearInterval(window._lup);
+
+  window._lup=setInterval(function(){
+
+    var n2=Math.floor(Date.now()/1000);
+
+    rm.forEach(function(r){
+
+      var st=ls&&ls[r.id];
+
+      if(!st||!st.live||!st.recording||!st.start_ts)return;
+
+      var el=document.getElementById('dur_'+r.id);
+
+      if(!el)return;
+
+      var ss=n2-st.start_ts;
+
+      if(ss<0)return;
+
+      var mm=Math.floor(ss/60),ss2=ss%60;
+
+      el.textContent=mm+':'+(ss2<10?'0':'')+ss2;
+
+    });
+
+  },1000);
+
+}
+
+/* ── Direct rooms.txt edit via Contents API ── */
+function editRoomsTxt(cb){
+  if(!ghToken){ setGhToken(); if(!ghToken) return; }
+  var url = GH_API + '/contents/rooms.txt';
+  var headers = {'Authorization':'token '+ghToken,'Accept':'application/vnd.github+json'};
+  fetch(url, {headers:headers}).then(function(r){ return r.json(); }).then(function(d){
+    var content = atob(d.content.replace(/\s/g,''));
+    var sha = d.sha;
+    var updated = cb(content);
+    if(updated === null){ st('房间已存在/不存在'); return; }
+    var body = JSON.stringify({
+      message: 'update rooms.txt',
+      content: btoa(unescape(encodeURIComponent(updated))),
+      sha: sha
+    });
+    fetch(url, {method:'PUT', headers:Object.assign({'Content-Type':'application/json'},headers), body:body})
+    .then(function(r2){
+      if(r2.ok){ st('已保存到服务器，稍后生效'); }
+      else { r2.json().then(function(e){ st('保存失败: '+(e.message||r2.status)); }); }
+    }).catch(function(){ st('网络错误'); });
+  }).catch(function(){ st('读取 rooms.txt 失败'); });
+}
+
+function addRm(){
+  var id=document.getElementById('ni').value.trim(),na=document.getElementById('nn').value.trim();
+  if(!id)return;
+  rm.push({id:id,name:na||id});
+  rrb(); bp(); rp();
+  document.getElementById('ni').value='';document.getElementById('nn').value='';
+  if(!ghToken){ st('已本地添加。点击 Token 按钮可同步到服务器'); return; }
+  editRoomsTxt(function(content){
+    if(content.indexOf(id+' = ')>=0 || content.indexOf(id+'=')>=0) return null;
+    return content.trim() + '\n' + id + ' = ' + (na||id) + '\n';
+  });
+  st('已提交到服务器，稍后生效');
+}
+
+function delRm(rid, i){
+  var name = rm[i] ? (rm[i].name || rid) : rid;
+  if(!confirm('删除房间 "'+name+'"？')) return;
+  rm.splice(i,1);
+  rrb(); bp(); rp();
+  if(!ghToken){ st('已本地删除。点击 Token 按钮可同步到服务器'); return; }
+  editRoomsTxt(function(content){
+    var lines = content.split('\n'), found = false;
+    var filtered = lines.filter(function(l){
+      var t = l.trim();
+      if(!t) return false;
+      if(t.indexOf(rid+' = ')===0 || t.indexOf(rid+'=')===0){ found=true; return false; }
+      return true;
+    });
+    if(!found) return null;
+    return filtered.join('\n') + '\n';
+  });
+  st('已提交删除，稍后生效');
+}
+
+lo();
+
+cls('dm');
+
+</script>
+
+</body>
+
+</html>

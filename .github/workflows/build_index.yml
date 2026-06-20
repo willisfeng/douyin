@@ -1,0 +1,39 @@
+name: Build releases index
+
+on:
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Build index
+        run: python3 build_releases_index.py
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Commit & push
+        run: |
+          if [ -n "$(git status --porcelain docs/releases_index.json)" ]; then
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git add docs/releases_index.json
+            git commit -m "Initial releases_index.json"
+            for i in 1 2 3; do
+              git pull --rebase origin main && git push origin main && break
+              echo "Retry $i..."
+              sleep 3
+            done
+          else
+            echo "No changes to releases_index.json"
+          fi

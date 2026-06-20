@@ -1,0 +1,42 @@
+name: Delete Room
+
+on:
+  workflow_dispatch:
+    inputs:
+      room_id:
+        description: Room ID to delete
+        required: true
+
+jobs:
+  delete_room:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete room
+        shell: bash
+        env:
+          RID: ${{ github.event.inputs.room_id }}
+        run: |
+          if grep -q "^$RID " rooms.txt || grep -q "^$RID=" rooms.txt; then
+            grep -v "^$RID " rooms.txt | grep -v "^$RID=" > rooms.tmp && mv rooms.tmp rooms.txt
+            echo "Deleted room: $RID"
+          else
+            echo "Room $RID not found in rooms.txt"
+          fi
+          # Remove blank lines
+          sed -i '/^$/d' rooms.txt
+      - name: Commit
+        run: |
+          git config user.name "room-bot"
+          git config user.email "room-bot@github.com"
+          git add rooms.txt
+          git diff --cached --quiet || git commit -m "delete room ${{ github.event.inputs.room_id }}"
+          for i in 1 2 3; do git pull --rebase && git push && break; done
+      - name: Trigger index rebuild
+        run: |
+          curl -X POST -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_index.yml/dispatches" \
+            -d '{"ref":"main"}'
