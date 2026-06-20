@@ -705,7 +705,6 @@ def handle_room_end(rid, recordings, anchor_names, now):
     outfile_pattern = rec.get("outfile", "")
     audiofile = rec.get("audiofile", "")
     seg_duration = rec.get("seg_duration", 900)
-    from datetime import datetime
     start_ts_fmt = datetime.fromtimestamp(rec.get("start", 0), tz=CST).strftime("%Y%m%d_%H%M%S")
     end_ts_fmt = datetime.fromtimestamp(now, tz=CST).strftime("%Y%m%d_%H%M%S")
     aname = anchor_names.get(rid, rid)
