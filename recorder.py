@@ -706,10 +706,8 @@ def handle_room_end(rid, recordings, anchor_names, now):
     audiofile = rec.get("audiofile", "")
     seg_duration = rec.get("seg_duration", 900)
     from datetime import datetime
-    from zoneinfo import ZoneInfo
-    CST = ZoneInfo("Asia/Shanghai") as _dt
-    start_ts_fmt = _dt.fromtimestamp(rec.get("start", 0), tz=CST).strftime("%Y%m%d_%H%M%S")
-    end_ts_fmt = _dt.fromtimestamp(now, tz=CST).strftime("%Y%m%d_%H%M%S")
+    start_ts_fmt = datetime.fromtimestamp(rec.get("start", 0), tz=CST).strftime("%Y%m%d_%H%M%S")
+    end_ts_fmt = datetime.fromtimestamp(now, tz=CST).strftime("%Y%m%d_%H%M%S")
     aname = anchor_names.get(rid, rid)
     dirname = OUTPUT_DIR
 
@@ -722,7 +720,7 @@ def handle_room_end(rid, recordings, anchor_names, now):
     upload_files = []
     for seg_fname in seg_files:
         seg_path = os.path.join(dirname, seg_fname)
-        seg_end = _dt.fromtimestamp(os.path.getmtime(seg_path), tz=CST).strftime("%Y%m%d_%H%M%S")
+        seg_end = datetime.fromtimestamp(os.path.getmtime(seg_path), tz=CST).strftime("%Y%m%d_%H%M%S")
         upload_files.append((seg_path, seg_fname))
 
     # Handle audio
