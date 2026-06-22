@@ -30,12 +30,12 @@
   "605722422749": {
     "live": true,
     "recording": true,
-    "start_ts": 1782169732,
+    "start_ts": 1782169682,
     "name": "敏哥网约车 (深圳,负债前行）",
     "checked_at": 1782171561
   },
   "621645834257": {
-    "live": true,
+    "live": false,
     "recording": false,
     "start_ts": null,
     "name": "夏老师在越南",
@@ -51,7 +51,7 @@
   "673814862790": {
     "live": true,
     "recording": true,
-    "start_ts": 1782168713,
+    "start_ts": 1782168760,
     "name": "果哥游南越(中越夫妻）",
     "checked_at": 1782171561
   },
@@ -79,7 +79,7 @@
   "961019695933": {
     "live": true,
     "recording": true,
-    "start_ts": 1782170054,
+    "start_ts": 1782169950,
     "name": "麻花在泰国",
     "checked_at": 1782171561
   }
