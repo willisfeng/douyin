@@ -856,8 +856,8 @@ def run():
                 log(f"Time limit ({elapsed/3600:.1f}h), exiting")
                 break
 
-            # Refresh rooms from GitHub
-            if now - last_refresh > 30:
+            # Refresh rooms from GitHub (reduced to save API rate limit)
+            if now - last_refresh > 120:
                 new_rooms = load_rooms_from_github()
                 for nr in new_rooms:
                     if nr["id"] not in [r["id"] for r in rooms]:
@@ -953,7 +953,7 @@ def run():
             if int(elapsed / 60) != int((elapsed - CHECK_INTERVAL) / 60):
                 log(f'[heartbeat] running {int(elapsed/60)}min, rooms={len(prev_live)}')
 
-            if int(elapsed / 60) != int((elapsed - CHECK_INTERVAL - 1) / 60):
+            if int(elapsed / 300) != int((elapsed - 30) / 300):
                 try:
                     status_data = {}
                     now_ts = int(time.time())
