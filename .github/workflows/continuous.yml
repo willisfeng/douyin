@@ -75,7 +75,7 @@ jobs:
         env:
           CHECK_INTERVAL: 60
           GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           GH_RUN_ID: ${{ github.run_id }}
           GH_RUN_NUMBER: ${{ github.run_number }}
           DOUYIN_COOKIE: ${{ secrets.DOUYIN_COOKIE }}
@@ -87,14 +87,14 @@ jobs:
         run: python3 fallback_upload.py
         env:
           GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           GH_RUN_ID: ${{ github.run_id }}
       - name: Build releases index
         if: always()
         run: python3 build_releases_index.py
         env:
           GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
       - name: Commit releases index
         if: always()
         run: |
@@ -113,7 +113,7 @@ jobs:
         if: always()
         run: |
           EXISTING=$(curl -s -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+            -H "Authorization: Bearer ${{ github.token }}" \
             "https://api.github.com/repos/${{ github.repository }}/actions/workflows/continuous.yml/runs?per_page=5&status=in_progress")
           IN_PROGRESS=$(echo "${EXISTING}" | python3 -c "import sys,json; runs=json.load(sys.stdin).get(\"workflow_runs\",[]); current=\"${{ github.run_number }}\"; other=[r[\"run_number\"] for r in runs if str(r[\"run_number\"])!=current]; print(len(other))" 2>/dev/null || echo "0")
           if [ "${IN_PROGRESS}" -gt "0" ]; then
@@ -121,7 +121,7 @@ jobs:
           else
             curl -s -X POST "https://api.github.com/repos/${{ github.repository }}/actions/workflows/continuous.yml/dispatches" \
               -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+              -H "Authorization: Bearer ${{ github.token }}" \
               -H "User-Agent: renew" \
               --data '{"ref":"main"}' && echo "Renew OK" || echo "Renew FAIL"
           fi
