@@ -552,30 +552,42 @@ def load_rooms():
 
 
 def load_rooms_from_github():
-    try:
-        if not GH_REPO or not GH_TOKEN:
-            return []
-        req = urllib.request.Request(
-            f"https://api.github.com/repos/{GH_REPO}/contents/{ROOMS_FILE}",
-            headers={"Authorization": f"Bearer {GH_TOKEN}", "Accept": "application/vnd.github+json"})
-        resp = urllib.request.urlopen(req, timeout=URLLIB_TIMEOUT)
-        data = json.loads(resp.read().decode())
-        content = base64.b64decode(data["content"]).decode("utf-8")
-        rooms = []
-        for line in content.split("\n"):
-            line = line.strip()
-            if not line or line.startswith("#"):
+    for attempt in range(3):
+        try:
+            if not GH_REPO or not GH_TOKEN:
+                return []
+            req = urllib.request.Request(
+                f"https://api.github.com/repos/{GH_REPO}/contents/{ROOMS_FILE}",
+                headers={"Authorization": f"Bearer {GH_TOKEN}", "Accept": "application/vnd.github+json"})
+            resp = urllib.request.urlopen(req, timeout=URLLIB_TIMEOUT)
+            data = json.loads(resp.read().decode())
+            content = base64.b64decode(data["content"]).decode("utf-8")
+            rooms = []
+            for line in content.split("\n"):
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split("=", 1)
+                if len(parts) < 2:
+                    parts = line.split(",", 1)
+                rid = parts[0].strip()
+                name = parts[1].strip() if len(parts) > 1 else rid
+                rooms.append({"id": rid, "name": name})
+            return rooms
+        except urllib.error.HTTPError as e:
+            if e.code == 403 and attempt < 2:
+                log(f"load_rooms_from_github rate limited, retry {attempt+1}...")
+                time.sleep(30)
                 continue
-            parts = line.split("=", 1)
-            if len(parts) < 2:
-                parts = line.split(",", 1)
-            rid = parts[0].strip()
-            name = parts[1].strip() if len(parts) > 1 else rid
-            rooms.append({"id": rid, "name": name})
-        return rooms
-    except Exception as e:
-        log(f"load_rooms_from_github error: {e}")
-        return []
+            log(f"load_rooms_from_github HTTP error: {e}")
+            return []
+        except Exception as e:
+            if attempt < 2:
+                log(f"load_rooms_from_github error: {e}, retry {attempt+1}...")
+                time.sleep(10)
+                continue
+            log(f"load_rooms_from_github error: {e}")
+            return []
 
 
 def update_rooms_nickname(anchor_names):

@@ -91,7 +91,7 @@ jobs:
           GH_RUN_ID: ${{ github.run_id }}
       - name: Build releases index
         if: always()
-        run: python3 build_releases_index.py
+        run: python3 build_releases_index.py || echo "Build releases index failed (rate limit?), continuing..."
         env:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
