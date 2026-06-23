@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build releases_index.json - pre-computed index of all release assets for the frontend.
 Runs in CI with GH_TOKEN, so API calls don't count against the anonymous rate limit."""
-import json, os, sys, re, urllib.request, base64
+import json, os, sys, re, urllib.request, base64, time as _time
 
 GH_REPO = os.environ.get("GH_REPO", "")
 GH_TOKEN = os.environ.get("GH_TOKEN", "")
@@ -16,10 +16,26 @@ AUTH_HEADERS = {
 }
 
 
-def fetch_json(url):
-    req = urllib.request.Request(url, headers=AUTH_HEADERS)
-    resp = urllib.request.urlopen(req, timeout=60)
-    return json.loads(resp.read().decode())
+def fetch_json(url, retries=3):
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, headers=AUTH_HEADERS)
+            resp = urllib.request.urlopen(req, timeout=60)
+            return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            if e.code == 403 and "rate limit" in str(e.read().decode(errors="ignore")).lower():
+                wait = (attempt + 1) * 30
+                print(f"  Rate limited, waiting {wait}s (attempt {attempt+1}/{retries})...")
+                _time.sleep(wait)
+                continue
+            raise
+        except Exception:
+            if attempt < retries - 1:
+                wait = (attempt + 1) * 10
+                print(f"  Request failed, retrying in {wait}s (attempt {attempt+1}/{retries})...")
+                _time.sleep(wait)
+                continue
+            raise
 
 
 def fetch_rooms():
