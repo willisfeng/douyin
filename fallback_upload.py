@@ -41,23 +41,6 @@ for fn in os.listdir(d):
     if not os.path.isfile(fp) or fn in existing:
         if fn in existing: print('SKIP (exists):', fn)
         continue
-    # Auto-rename if no ~ in filename
-    if '~' not in fn:
-        try:
-            from datetime import datetime
-            from zoneinfo import ZoneInfo
-            ets = datetime.now(tz=ZoneInfo("Asia/Shanghai")).strftime('%Y%m%d_%H%M%S')
-            dn = os.path.dirname(fp)
-            bn = fn.rsplit('.', 1)[0]
-            ext = fn.split('.')[-1] if '.' in fn else ''
-            nfn = bn + '~' + ets + '.' + ext
-            np = os.path.join(dn, nfn)
-            os.rename(fp, np)
-            print('FALLBACK RENAME:', fn, '->', nfn)
-            fp = np
-            fn = nfn
-        except Exception as e:
-            print('FALLBACK RENAME fail:', e)
     with open(fp, 'rb') as f:
         data = f.read()
     url = release_url + '?name=' + urllib.parse.quote(fn)
