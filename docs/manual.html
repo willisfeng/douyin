@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>操作手册 - 抖音直播录制</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --accent: #58a6ff;
+  --accent2: #20d5ec;
+  --pink: #fe2c55;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.8;min-height:100vh}
+.top-nav{position:sticky;top:0;z-index:100;background:rgba(1,1,1,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:56px}
+.nav-brand{font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--pink),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1px}
+.nav-links{display:flex;gap:16px}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:14px;transition:color .2s}
+.nav-links a:hover{color:var(--accent2)}
+.container{max-width:860px;margin:0 auto;padding:32px 20px 60px}
+h1{font-size:28px;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:20px;font-weight:700;margin:40px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--border);color:var(--accent2)}
+h3{font-size:17px;font-weight:600;margin:24px 0 12px;color:var(--text)}
+p{margin:10px 0;color:var(--text2);font-size:15px}
+strong{color:var(--text)}
+code{background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:13px;color:var(--accent2)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{padding:12px 16px;text-align:left;border:1px solid var(--border)}
+th{background:var(--surface);color:var(--accent2);font-weight:600}
+td{color:var(--text2)}
+tr:hover td{background:var(--surface)}
+ul,ol{padding-left:24px;margin:10px 0;color:var(--text2);font-size:15px}
+li{margin:6px 0}
+li::marker{color:var(--accent)}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+hr{border:none;border-top:1px solid var(--border);margin:36px 0}
+.toc{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin:24px 0}
+.toc h3{margin-top:0;font-size:16px}
+.toc ul{list-style:none;padding-left:0}
+.toc li{margin:6px 0}
+.toc a{color:var(--text2);font-size:14px}
+.toc a:hover{color:var(--accent2)}
+.highlight-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 22px;margin:16px 0}
+.highlight-box p{margin:6px 0}
+.highlight-box ul{margin:6px 0}
+.file-card{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin:10px 0}
+.file-card .icon{font-size:24px;flex-shrink:0;width:36px;text-align:center}
+.file-card .info{flex:1}
+.file-card .info .name{font-weight:600;color:var(--text);font-size:15px}
+.file-card .info .desc{color:var(--text2);font-size:13px;margin-top:2px}
+.back-top{position:fixed;bottom:24px;right:24px;width:40px;height:40px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:18px;transition:all .2s;opacity:0;pointer-events:none}
+.back-top.show{opacity:1;pointer-events:auto}
+.back-top:hover{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.step{display:flex;align-items:flex-start;gap:12px;margin:14px 0}
+.step-num{flex-shrink:0;width:28px;height:28px;background:var(--accent);color:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.step-text{color:var(--text2);font-size:15px;padding-top:2px}
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+  <div class="nav-brand">📖 操作手册</div>
+  <div class="nav-links">
+    <a href="index.html">← 返回首页</a>
+  </div>
+</div>
+
+<div class="container">
+
+<h1>抖音直播录制 - 使用指南</h1>
+
+<div class="toc">
+<h3>📑 目录</h3>
+<ul>
+  <li><a href="#s1">一、这是什么？</a></li>
+  <li><a href="#s2">二、如何新增直播间？</a></li>
+  <li><a href="#s3">三、录播文件有哪些格式？分别有什么用？</a></li>
+  <li><a href="#s4">四、录播文件保存多久？</a></li>
+  <li><a href="#s5">五、如何删除直播间？</a></li>
+  <li><a href="#s6">六、直播弹幕怎么显示？</a></li>
+  <li><a href="#s7">七、语音转文字怎么用？</a></li>
+  <li><a href="#s8">八、常见问题</a></li>
+</ul>
+</div>
+
+<h2 id="s1">一、这是什么？</h2>
+<p>一个<strong>自动录制抖音直播</strong>的工具。你只需要告诉它想录哪个直播间，它就会 24 小时盯着——主播一开播就自动开始录，下播自动停，完全不用管。</p>
+<p>录制过程中还会自动采集<strong>弹幕</strong>和<strong>观众人数</strong>，录完后能把主播说的话<strong>自动转成文字</strong>，方便回看。</p>
+<p>所有文件可以通过这个网页直接浏览和下载，手机电脑都能看。</p>
+
+<hr>
+
+<h2 id="s2">二、如何新增直播间？</h2>
+
+<h3>方式一：在网页上直接添加（推荐）</h3>
+<p>打开首页 → 点击"新增房间" → 输入房间号 → 确认。就这么简单，无需任何技术操作。</p>
+
+<div class="highlight-box">
+<p><strong>什么是房间号？</strong></p>
+<p>打开抖音直播间，看网址：<code>https://live.douyin.com/<strong>123456789</strong></code>，斜杠后面的那串数字就是房间号。复制它就行。</p>
+</div>
+
+<h3>方式二：从抖音 App 获取</h3>
+<div class="step"><span class="step-num">1</span><span class="step-text">打开抖音 App，进入你想录的直播间</span></div>
+<div class="step"><span class="step-num">2</span><span class="step-text">点击右下角"分享"按钮 → 选择"复制链接"</span></div>
+<div class="step"><span class="step-num">3</span><span class="step-text">链接中的数字部分就是房间号，粘贴到新增房间的输入框即可</span></div>
+
+<hr>
+
+<h2 id="s3">三、录播文件有哪些格式？分别有什么用？</h2>
+
+<p>每次直播录制完成后，会生成以下几种文件：</p>
+
+<div class="file-card">
+  <div class="icon">🎬</div>
+  <div class="info">
+    <div class="name">MP4 视频文件</div>
+    <div class="desc">最通用的视频格式，手机、电脑、电视都能直接播放。每 15 分钟自动切一段，方便查找。注意：这个版本不包含弹幕。</div>
+  </div>
+</div>
+
+<div class="file-card">
+  <div class="icon">🎬</div>
+  <div class="info">
+    <div class="name">MKV 视频文件（带弹幕）</div>
+    <div class="desc">和 MP4 内容一样，但<strong>内嵌了弹幕字幕</strong>。用播放器打开后，可以在字幕菜单里开关弹幕显示。推荐下载这个版本，能看到当时观众的互动。</div>
+  </div>
+</div>
+
+<div class="file-card">
+  <div class="icon">🎵</div>
+  <div class="info">
+    <div class="name">WAV 音频文件</div>
+    <div class="desc">直播录音，只有声音没有画面。主要用来做语音转文字，如果你只想听内容不想看画面，下载这个就行，文件比视频小很多。</div>
+  </div>
+</div>
+
+<div class="file-card">
+  <div class="icon">📝</div>
+  <div class="info">
+    <div class="name">TXT 转写文本</div>
+    <div class="desc">把主播说的话自动转成纯文字，方便搜索关键词、做笔记、或者快速浏览直播讲了什么。</div>
+  </div>
+</div>
+
+<div class="file-card">
+  <div class="icon">💬</div>
+  <div class="info">
+    <div class="name">SRT 字幕文件</div>
+    <div class="desc">带时间戳的字幕，用播放器加载后可以像看电影字幕一样，看到主播每句话对应的时间点。配合 MP4 或 MKV 使用。</div>
+  </div>
+</div>
+
+<div class="highlight-box">
+<p><strong>💡 简单总结：</strong></p>
+<ul>
+  <li>想看回放 → 下载 <strong>MKV</strong>（有弹幕）或 <strong>MP4</strong>（无弹幕）</li>
+  <li>想听内容 → 下载 <strong>WAV</strong></li>
+  <li>想看文字 → 看 <strong>TXT</strong></li>
+  <li>想要字幕 → 下载 <strong>SRT</strong></li>
+</ul>
+</div>
+
+<hr>
+
+<h2 id="s4">四、录播文件保存多久？</h2>
+
+<p>录制文件<strong>长期保存，不会自动删除</strong>。只要你不手动清理，之前的录播一直都在。</p>
+
+<div class="highlight-box">
+<p><strong>📦 存储说明：</strong></p>
+<ul>
+  <li>文件保存在云端，不占你手机/电脑的空间</li>
+  <li>没有过期时间，去年的录播也能找回来</li>
+  <li>如果存储空间满了，系统会提示，到时候再清理也不迟</li>
+  <li>清理时建议从最早的录播开始删，保留最近的</li>
+</ul>
+</div>
+
+<hr>
+
+<h2 id="s5">五、如何删除直播间？</h2>
+
+<p>在首页找到"删除房间"功能 → 输入要删除的房间号 → 确认。</p>
+<p>删除后，系统不会再录制该直播间，但<strong>之前已经录好的文件不会丢失</strong>，仍然可以浏览和下载。</p>
+
+<hr>
+
+<h2 id="s6">六、直播弹幕怎么显示？</h2>
+
+<p>系统在录制视频的同时，会自动抓取直播间里的弹幕和观众人数。</p>
+
+<ul>
+  <li><strong>弹幕</strong>：显示为视频底部滚动的字幕，和看直播时的体验一样</li>
+  <li><strong>观众数</strong>：显示在视频左上角，可以看到每时每刻有多少人在看</li>
+</ul>
+
+<p>下载 <strong>MKV 格式</strong>的视频文件，用播放器打开后，在字幕设置里就能开关弹幕显示。用 PotPlayer、VLC、IINA 等播放器效果最好。</p>
+
+<hr>
+
+<h2 id="s7">七、语音转文字怎么用？</h2>
+
+<p>录制完成后，系统会自动把音频送去转成文字。不需要你做任何操作。</p>
+
+<p>转写完成后，每个录播会多出两个文件：</p>
+<ul>
+  <li><strong>TXT</strong>：纯文字版，可以搜索关键词</li>
+  <li><strong>SRT</strong>：字幕版，带时间，加载到视频里可以边看边读</li>
+</ul>
+
+<p>支持的语言：<strong>中文、粤语、英语、日语、韩语</strong>等，系统会自动识别。</p>
+
+<hr>
+
+<h2 id="s8">八、常见问题</h2>
+
+<h3>Q1: 为什么有的直播没录到？</h3>
+<p>可能的原因：</p>
+<ul>
+  <li>主播开播时系统刚好在重启（每 5 小时一次，有 30 分钟重叠，极少漏掉）</li>
+  <li>抖音改了页面结构导致检测失败（会自动恢复）</li>
+  <li>直播间被抖音封禁或下架</li>
+</ul>
+
+<h3>Q2: 录制画质怎么样？</h3>
+<p>自动选择最高画质（超清 > 高清 > 标清），和你在抖音 App 里看到的画质一样，不会压缩。</p>
+
+<h3>Q3: 文件显示的时间不准？</h3>
+<p>所有时间都以<strong>中国北京时间（东八区）</strong>为准。如果发现时间偏差超过 8 小时，可能是系统时区设置有误，会自动修正。</p>
+
+<h3>Q4: 可以同时录多个直播间吗？</h3>
+<p>可以。添加多少个房间就录多少个，互不影响。所有直播间同时监控，谁开播就录谁。</p>
+
+<h3>Q5: 录制会占用我的手机/电脑资源吗？</h3>
+<p>完全不会。录制全部在云端服务器上运行，不需要你开机，不需要装软件，有网就能随时查看和下载录播。</p>
+
+<h3>Q6: 怎么知道现在有哪些主播在直播？</h3>
+<p>打开首页，直播间列表会显示每个房间的<strong>实时状态</strong>——绿色表示正在直播，灰色表示没开播。正在录制的会有录制中的标识。</p>
+
+</div>
+
+<button class="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+
+<script>
+window.addEventListener('scroll',function(){
+  document.querySelector('.back-top').classList.toggle('show', window.scrollY > 400);
+});
+</script>
+
+</body>
+</html>
