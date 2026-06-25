@@ -132,6 +132,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .fitem .fa{display:flex;gap:6px}
 .fitem .fa a,.fitem .fa button{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--dy-pink),var(--dy-pink2));border:none;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:700;transition:opacity .2s}
 .fitem .fa a:hover,.fitem .fa button:hover{opacity:.85}
+.fitem .fcb{flex-shrink:0;width:18px;height:18px;accent-color:var(--dy-pink);cursor:pointer}
+.batch-bar{display:flex;align-items:center;gap:12px;padding:10px 0;margin-bottom:12px;border-bottom:1px solid var(--dy-border)}
+.batch-bar label{font-size:13px;color:var(--dy-text2);cursor:pointer;display:flex;align-items:center;gap:4px}
+.batch-bar button{background:linear-gradient(135deg,var(--dy-pink),var(--dy-pink2));border:none;border-radius:6px;padding:8px 18px;color:#fff;font-size:13px;cursor:pointer;font-weight:700;transition:opacity .2s}
+.batch-bar button:hover{opacity:.85}
+.batch-bar button:disabled{opacity:.3;cursor:not-allowed}
+.batch-bar .sel-count{font-size:12px;color:var(--dy-text3)}
 
 /* ── Room Manager ── */
 .room-mgr{max-width:1100px;margin:0 auto;padding:0 16px;display:none}
@@ -594,7 +601,12 @@ function od(an,pi){
 
   p.it.forEach(function(a){if(gr[a.ty])gr[a.ty].push(a);else gr.t.push(a)});
 
-  var h='<div style="margin-bottom:16px;font-weight:600">'+(p.st?ft(p.st,p.et):(p.st?'':p.dk.slice(5)))+'</div>';
+  var h='<div class="batch-bar">'+
+    '<label><input type="checkbox" class="fcb" onchange="toggleAll(this)" title="全选/取消全选"> 全选</label>'+
+    '<button id="batchDlBtn" disabled onclick="batchDownload()">⬇ 批量下载</button>'+
+    '<span class="sel-count" id="selCount"></span>'+
+    '</div>'+
+    '<div style="margin-bottom:16px;font-weight:600">'+(p.st?ft(p.st,p.et):(p.st?'':p.dk.slice(5)))+'</div>';
 
   ['v','a','t','s'].forEach(function(t){
 
@@ -602,11 +614,12 @@ function od(an,pi){
 
     h+='<div class="fgroup"><h3>'+gi(t)+' '+gl(t)+' ('+gr[t].length+')</h3>';
 
-    gr[t].forEach(function(a){
+    gr[t].forEach(function(a,idx){
 
-      h+='<div class="fitem"><div class="fi"><div class="fn">'+eh(a.n)+'</div><div class="fm">'+fs(a.z)+'</div></div>';
-
-      h+='<div class="fa"><a href="'+eh(proxyUrl(a.u))+'" target="_blank">&#x2B07;</a></div></div>';
+      var cid='_fcb_'+t+'_'+idx;
+      h+='<div class="fitem"><input type="checkbox" class="fcb" id="'+cid+'" data-url="'+eh(a.u)+'" data-name="'+eh(a.n)+'" onchange="updateBatch()">';
+      h+='<div class="fi"><label for="'+cid+'" style="cursor:pointer"><div class="fn">'+eh(a.n)+'</div><div class="fm">'+fs(a.z)+'</div></label></div>';
+      h+='<div class="fa"><a href="'+eh(proxyUrl(a.u))+'" target="_blank" onclick="event.stopPropagation()">&#x2B07;</a></div></div>';
 
     });
 
@@ -618,6 +631,39 @@ function od(an,pi){
 
   document.getElementById('dm').classList.add('show');
 
+}
+
+function toggleAll(el){
+  var cbs=document.querySelectorAll('#db .fcb');
+  for(var i=0;i<cbs.length;i++){if(cbs[i]!==el)cbs[i].checked=el.checked}
+  updateBatch();
+}
+function updateBatch(){
+  var cbs=document.querySelectorAll('#db .fcb[id]');
+  var cnt=0;for(var i=0;i<cbs.length;i++){if(cbs[i].checked)cnt++}
+  document.getElementById('batchDlBtn').disabled=(cnt===0);
+  document.getElementById('selCount').textContent=cnt>0?'已选 '+cnt+' 个':'';
+}
+function batchDownload(){
+  var cbs=document.querySelectorAll('#db .fcb[id]:checked');
+  if(!cbs.length)return;
+  var urls=[];
+  for(var i=0;i<cbs.length;i++){
+    var u=cbs[i].getAttribute('data-url');
+    if(u)urls.push(proxyUrl(u));
+  }
+  if(urls.length===1){
+    window.open(urls[0],'_blank');
+  }else{
+    for(var j=0;j<urls.length;j++){
+      setTimeout(function(){
+        var a=document.createElement('a');
+        a.href=urls[j];a.download='';a.target='_blank';
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+      },j*300);
+    }
+  }
+  st('开始下载 '+urls.length+' 个文件');
 }
 
 function cls(id){document.getElementById(id).classList.remove('show')}
