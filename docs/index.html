@@ -652,18 +652,13 @@ function batchDownload(){
     var u=cbs[i].getAttribute('data-url');
     if(u)urls.push(proxyUrl(u));
   }
-  if(urls.length===1){
-    window.open(urls[0],'_blank');
-  }else{
-    for(var j=0;j<urls.length;j++){
-      setTimeout(function(){
-        var a=document.createElement('a');
-        a.href=urls[j];a.download='';a.target='_blank';
-        document.body.appendChild(a);a.click();document.body.removeChild(a);
-      },j*300);
-    }
-  }
   st('开始下载 '+urls.length+' 个文件');
+  // Open each URL in a new tab — browsers will handle the download naturally
+  for(var j=0;j<urls.length;j++){
+    setTimeout(function(){
+      window.open(urls[j],'_blank');
+    },j*500);
+  }
 }
 
 function cls(id){document.getElementById(id).classList.remove('show')}
