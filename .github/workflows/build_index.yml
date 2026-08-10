@@ -21,14 +21,14 @@ jobs:
         run: python3 build_releases_index.py
         env:
           GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
       - name: Commit & push
         run: |
           if [ -n "$(git status --porcelain docs/releases_index.json)" ]; then
             git config user.name "github-actions"
             git config user.email "actions@github.com"
             git add docs/releases_index.json
-            git commit -m "Initial releases_index.json"
+            git commit -m "Update releases_index.json [skip ci]"
             for i in 1 2 3; do
               git pull --rebase origin main && git push origin main && break
               echo "Retry $i..."
