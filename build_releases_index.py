@@ -129,13 +129,24 @@ def main():
     room_map = {r["id"]: r["name"] for r in rooms}
     print(f"Loaded {len(rooms)} rooms")
 
-    # Fetch all releases with assets
+    # Fetch all releases with assets.
+    # NOTE: GitHub REST API caps the releases list at the first 1000 results
+    # (HTTP 422 "Only the first 1000 results are available"). We tolerate that
+    # limit by stopping cleanly; older releases already present in the existing
+    # index are preserved via the merge below.
     all_releases = []
     page = 1
     while True:
-        releases = fetch_json(
-            f"https://api.github.com/repos/{GH_REPO}/releases?per_page=100&page={page}"
-        )
+        try:
+            releases = fetch_json(
+                f"https://api.github.com/repos/{GH_REPO}/releases?per_page=100&page={page}"
+            )
+        except urllib.error.HTTPError as e:
+            if e.code == 422:
+                print(f"  GitHub API limit reached at page {page} "
+                      f"(only first 1000 releases available), using {len(all_releases)} releases")
+                break
+            raise
         if not releases:
             break
         all_releases.extend(releases)
@@ -184,15 +195,40 @@ def main():
                 "et": p["e"] if p else None,
             })
 
-    print(f"Total assets: {len(assets)}")
+    print(f"Total assets fetched from current page window: {len(assets)}")
 
     # Write index
     output_path = os.path.join(os.path.dirname(__file__) or ".", "docs", "releases_index.json")
+
+    # Incremental merge with the existing index: the GitHub API only exposes the
+    # first 1000 releases, so historical assets must be carried over from the
+    # previously generated file instead of being dropped.
+    merged = list(assets)
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, "r", encoding="utf-8") as f:
+                old = json.load(f)
+            old_assets = old.get("assets", [])
+            seen = {a["id"] for a in merged}
+            carried = 0
+            for a in old_assets:
+                if a.get("id") not in seen:
+                    merged.append(a)
+                    seen.add(a["id"])
+                    carried += 1
+            print(f"Carried over {carried} historical assets from existing index")
+            if not rooms and old.get("rooms"):
+                rooms = old["rooms"]
+        except Exception as e:
+            print(f"Warning: could not load existing index for merge: {e}")
+
+    print(f"Total assets after merge: {len(merged)}")
+
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump({"rooms": rooms, "assets": assets}, f, ensure_ascii=False, indent=1)
+        json.dump({"rooms": rooms, "assets": merged}, f, ensure_ascii=False, indent=1)
 
     print(f"Written to {output_path}")
-    print(f"  Assets: {len(assets)}")
+    print(f"  Assets: {len(merged)}")
     print(f"  Rooms:  {len(rooms)}")
 
 

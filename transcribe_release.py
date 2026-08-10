@@ -11,7 +11,14 @@ release_jobs = []
 page = 1
 while True:
     url = 'https://api.github.com/repos/%s/releases?per_page=100&page=%d' % (repo, page)
-    rels = json.loads(urllib.request.urlopen(urllib.request.Request(url, headers=gh)).read())
+    try:
+        resp = urllib.request.urlopen(urllib.request.Request(url, headers=gh))
+    except urllib.error.HTTPError as e:
+        if e.code == 422:
+            print('GitHub API limit reached (only first 1000 releases); stopping scan')
+            break
+        raise
+    rels = json.loads(resp.read())
     if not rels:
         break
     for rel in rels:

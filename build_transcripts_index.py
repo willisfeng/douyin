@@ -29,8 +29,22 @@ for line in room_text.split('\n'):
 
 print(f'Loaded {len(room_names)} rooms')
 
-# 2. Get all releases
-releases = api('/releases?per_page=100')
+# 2. Get all releases (paginate; GitHub caps the list at 1000 results -> stop cleanly)
+releases = []
+page = 1
+while True:
+    try:
+        rels = api('/releases?per_page=100&page=%d' % page)
+    except u.error.HTTPError as e:
+        if e.code == 422:
+            print('GitHub API limit reached (only first 1000 releases), using %d releases' % len(releases))
+            break
+        raise
+    if not rels:
+        break
+    releases.extend(rels)
+    page += 1
+    print(f'Fetched page {page-1}, total {len(releases)} releases')
 print(f'Found {len(releases)} releases')
 
 # 3. Collect .txt files grouped by room
@@ -38,7 +52,8 @@ groups = {}
 total = 0
 
 for rel in releases:
-    assets = api('/releases/' + str(rel['id']) + '/assets')
+    # assets are embedded in the list response (not truncated for this repo)
+    assets = rel.get('assets', [])
     for a in assets:
         name = a['name']
         if not name.endswith('.txt'):
@@ -53,8 +68,9 @@ for rel in releases:
         start_ts = parts[1]
         end_ts = '_'.join(parts[2:])
 
-        download_url = ('https://raw.githubusercontent.com/' + OWNER + '/' + REPO +
-                        '/main/' + rel['tag_name'] + '/' + name)
+        download_url = a.get('browser_download_url') or (
+            'https://raw.githubusercontent.com/' + OWNER + '/' + REPO +
+            '/main/' + rel['tag_name'] + '/' + name)
 
         if rid not in groups:
             groups[rid] = []
