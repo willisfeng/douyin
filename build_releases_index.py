@@ -136,7 +136,8 @@ def main():
     # index are preserved via the merge below.
     all_releases = []
     page = 1
-    while True:
+    MAX_PAGES = 500  # hard cap: ~50000 releases, far beyond the API's ~10000-result window
+    while page <= MAX_PAGES:
         try:
             releases = fetch_json(
                 f"https://api.github.com/repos/{GH_REPO}/releases?per_page=100&page={page}"
@@ -144,7 +145,7 @@ def main():
         except urllib.error.HTTPError as e:
             if e.code == 422:
                 print(f"  GitHub API limit reached at page {page} "
-                      f"(only first 1000 releases available), using {len(all_releases)} releases")
+                      f"(only first {len(all_releases)} releases available), using {len(all_releases)} releases")
                 break
             raise
         if not releases:
