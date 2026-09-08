@@ -51,6 +51,54 @@
  ],
  "assets": [
   {
+   "id": 550649166,
+   "n": "audio_451364731997_20260908_172046.log",
+   "z": 284,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-34209303809/audio_451364731997_20260908_172046.log",
+   "c": "2026-09-08T14:21:56Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
+   "id": 550649135,
+   "n": "audio_451364731997_20260908_191103.log",
+   "z": 285,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-34209303809/audio_451364731997_20260908_191103.log",
+   "c": "2026-09-08T14:21:55Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
+   "id": 550649129,
+   "n": "ffmpeg_451364731997_20260908_172046.log",
+   "z": 284,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-34209303809/ffmpeg_451364731997_20260908_172046.log",
+   "c": "2026-09-08T14:21:55Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
+   "id": 550649148,
+   "n": "ffmpeg_451364731997_20260908_191103.log",
+   "z": 285,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-34209303809/ffmpeg_451364731997_20260908_191103.log",
+   "c": "2026-09-08T14:21:56Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
    "id": 550503172,
    "n": "audio_451364731997_20260908_161652.log",
    "z": 285,
@@ -1268,6 +1316,18 @@
    "z": 198380542,
    "u": "https://github.com/willisfeng/douyin/releases/download/451364731997_20260907_202016_003.mp4/451364731997_20260907_202016_003.mp4",
    "c": "2026-09-07T14:34:36Z",
+   "ty": "v",
+   "ri": "451364731997",
+   "an": "蛋总的小摊",
+   "st": "20260907_202016",
+   "et": null
+  },
+  {
+   "id": 548923551,
+   "n": "451364731997_20260907_202016_003.mkv",
+   "z": 198155135,
+   "u": "https://github.com/willisfeng/douyin/releases/download/451364731997_20260907_202016_003.mkv/451364731997_20260907_202016_003.mkv",
+   "c": "2026-09-07T14:35:42Z",
    "ty": "v",
    "ri": "451364731997",
    "an": "蛋总的小摊",
