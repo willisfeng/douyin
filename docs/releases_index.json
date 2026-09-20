@@ -51,6 +51,30 @@
  ],
  "assets": [
   {
+   "id": 576970492,
+   "n": "audio_451364731997_20260920_173607.log",
+   "z": 13375,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-35502651824/audio_451364731997_20260920_173607.log",
+   "c": "2026-09-20T14:37:24Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
+   "id": 576970514,
+   "n": "ffmpeg_451364731997_20260920_173607.log",
+   "z": 27789,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-35502651824/ffmpeg_451364731997_20260920_173607.log",
+   "c": "2026-09-20T14:37:25Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
    "id": 576848066,
    "n": "audio_451364731997_20260920_161829.log",
    "z": 13375,
