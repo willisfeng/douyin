@@ -51,6 +51,78 @@
  ],
  "assets": [
   {
+   "id": 737931360,
+   "n": "audio_605722422749_20261112_083115.log",
+   "z": 284,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-43112603809/audio_605722422749_20261112_083115.log",
+   "c": "2026-11-12T03:37:30Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
+   "id": 737931316,
+   "n": "audio_636171657211_20261112_085934.log",
+   "z": 284,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-43112603809/audio_636171657211_20261112_085934.log",
+   "c": "2026-11-12T03:37:29Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
+   "id": 737931268,
+   "n": "audio_961019695933_20261112_094631.log",
+   "z": 285,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-43112603809/audio_961019695933_20261112_094631.log",
+   "c": "2026-11-12T03:37:28Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
+   "id": 737931462,
+   "n": "ffmpeg_605722422749_20261112_083115.log",
+   "z": 284,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-43112603809/ffmpeg_605722422749_20261112_083115.log",
+   "c": "2026-11-12T03:37:31Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
+   "id": 737931418,
+   "n": "ffmpeg_636171657211_20261112_085934.log",
+   "z": 284,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-43112603809/ffmpeg_636171657211_20261112_085934.log",
+   "c": "2026-11-12T03:37:30Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
+   "id": 737931225,
+   "n": "ffmpeg_961019695933_20261112_094631.log",
+   "z": 285,
+   "u": "https://github.com/willisfeng/douyin/releases/download/rec-43112603809/ffmpeg_961019695933_20261112_094631.log",
+   "c": "2026-11-12T03:37:27Z",
+   "ty": "t",
+   "ri": null,
+   "an": "oth",
+   "st": null,
+   "et": null
+  },
+  {
    "id": 737790280,
    "n": "audio_605722422749_20261112_083007.log",
    "z": 284,
